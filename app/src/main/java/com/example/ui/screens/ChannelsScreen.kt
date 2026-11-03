@@ -76,7 +76,7 @@ fun ChannelsScreen(
             )
         )
 
-        Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Column(
                 modifier = Modifier.weight(0.36f).fillMaxHeight().clip(RoundedCornerShape(12.dp))
                     .background(CardBackground).padding(horizontal = 6.dp, vertical = 8.dp)
