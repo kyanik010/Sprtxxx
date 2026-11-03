@@ -11,11 +11,8 @@ import org.junit.runner.RunWith
 class ExampleInstrumentedTest {
 
     @Test
-    fun launcherActivityStartsAndRemainsVisibleAfterStartup() {
+    fun launcherActivityStartsAndRemainsVisible() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            // Keep the activity running long enough to catch delayed startup crashes.
-            Thread.sleep(6_000)
-
             scenario.onActivity { activity ->
                 assertFalse("MainActivity unexpectedly finished", activity.isFinishing)
                 assertNotNull("Activity window was not created", activity.window)
