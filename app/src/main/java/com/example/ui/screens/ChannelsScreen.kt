@@ -1,12 +1,13 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
@@ -16,13 +17,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.example.data.model.Category
 import com.example.data.model.Channel
-import com.example.ui.components.ChannelItemCard
 import com.example.ui.theme.*
 
 @Composable
@@ -30,211 +31,150 @@ fun ChannelsScreen(
     channels: List<Channel>,
     categories: List<Category>,
     favorites: Set<String>,
+    selectedCategoryId: String,
+    currentChannelId: String?,
+    searchQuery: String,
+    onCategorySelected: (String) -> Unit,
+    onSearchQueryChanged: (String) -> Unit,
     onSelectChannel: (Channel) -> Unit,
     onToggleFavorite: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedCategoryId by remember { mutableStateOf("all") }
-    var showOnlyFavorites by remember { mutableStateOf(false) }
-
-    val filteredChannels = remember(channels, searchQuery, selectedCategoryId, showOnlyFavorites, favorites) {
+    val visibleCategories = remember(categories, searchQuery) {
+        if (searchQuery.isBlank()) categories else categories.filter {
+            it.name.contains(searchQuery.trim(), ignoreCase = true) ||
+                it.id.contains(searchQuery.trim(), ignoreCase = true)
+        }
+    }
+    val visibleChannels = remember(channels, selectedCategoryId, searchQuery) {
         channels.filter { channel ->
-            val matchesCategory = when {
-                showOnlyFavorites -> favorites.contains(channel.id)
-                selectedCategoryId == "all" -> true
-                else -> channel.categoryId.equals(selectedCategoryId, ignoreCase = true)
-            }
-
-            val matchesSearch = if (searchQuery.isBlank()) {
-                true
-            } else {
-                channel.name.contains(searchQuery, ignoreCase = true) ||
-                channel.channelNumber.toString().contains(searchQuery.trim()) ||
-                channel.currentProgram.contains(searchQuery, ignoreCase = true)
-            }
-
-            matchesCategory && matchesSearch
+            channel.categoryId.equals(selectedCategoryId, ignoreCase = true) &&
+                (searchQuery.isBlank() || channel.name.contains(searchQuery.trim(), ignoreCase = true) ||
+                    channel.channelNumber.toString().contains(searchQuery.trim()))
         }
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(NightNavy)
-            .padding(horizontal = 16.dp)
-    ) {
-        // Header
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp, bottom = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.Tv,
-                contentDescription = null,
-                tint = CalmGold,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "دليل القنوات الرياضية",
-                style = MaterialTheme.typography.headlineMedium,
-                color = SnowWhite,
-                fontWeight = FontWeight.Bold
-            )
+    Column(modifier = modifier.fillMaxSize().background(NightNavy).padding(horizontal = 10.dp, vertical = 8.dp)) {
+        Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Tv, contentDescription = null, tint = CalmGold, modifier = Modifier.size(23.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("تصفح القنوات", color = SnowWhite, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         }
-
-        // Search Bar
         OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = { Text("ابحث باسم القناة، رقمها (1-99)، أو البرنامج...", color = TextMuted) },
-            leadingIcon = {
-                Icon(Icons.Default.Search, contentDescription = "بحث", tint = CalmGold)
-            },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { searchQuery = "" }) {
-                        Icon(Icons.Default.Close, contentDescription = "مسح البحث", tint = TextMuted)
-                    }
-                }
-            },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp),
+            value = searchQuery, onValueChange = onSearchQueryChanged,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 9.dp).testTag("channel_search_input"),
+            placeholder = { Text("ابحث عن تصنيف أو قناة...", color = TextMuted) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "بحث", tint = CalmGold) },
+            trailingIcon = { if (searchQuery.isNotEmpty()) IconButton(onClick = { onSearchQueryChanged("") }) {
+                Icon(Icons.Default.Close, contentDescription = "مسح البحث", tint = TextMuted)
+            } },
+            singleLine = true, shape = RoundedCornerShape(10.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = DarkSportsBlue,
-                unfocusedContainerColor = CardBackground,
-                focusedBorderColor = CalmGold,
-                unfocusedBorderColor = CardBorder,
-                focusedTextColor = SnowWhite,
-                unfocusedTextColor = SnowWhite
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 12.dp)
-                .testTag("channel_search_input")
+                focusedContainerColor = DarkSportsBlue, unfocusedContainerColor = CardBackground,
+                focusedBorderColor = CalmGold, unfocusedBorderColor = CardBorder,
+                focusedTextColor = SnowWhite, unfocusedTextColor = SnowWhite
+            )
         )
 
-        // Category Filter Chips
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 14.dp)
-        ) {
-            // All channels
-            item {
-                FilterChip(
-                    selected = !showOnlyFavorites && selectedCategoryId == "all",
-                    onClick = { showOnlyFavorites = false; selectedCategoryId = "all" },
-                    label = { Text("كل القنوات") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = CalmGold, selectedLabelColor = NightNavy,
-                        containerColor = DarkSportsBlue, labelColor = SnowWhite
-                    ),
-                    modifier = Modifier.testTag("filter_all_channels")
-                )
-            }
-
-            // Favorites Quick Chip
-            item {
-                FilterChip(
-                    selected = showOnlyFavorites,
-                    onClick = {
-                        showOnlyFavorites = !showOnlyFavorites
-                    },
-                    leadingIcon = {
-                        Icon(
-                            Icons.Default.Star,
-                            contentDescription = null,
-                            tint = if (showOnlyFavorites) NightNavy else CalmGold,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    },
-                    label = { Text("المفضلة (${favorites.size})") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = CalmGold,
-                        selectedLabelColor = NightNavy,
-                        containerColor = DarkSportsBlue,
-                        labelColor = SnowWhite
-                    ),
-                    modifier = Modifier.testTag("filter_favorites")
-                )
-            }
-
-            // Categories
-            items(categories) { category ->
-                val isSelected = !showOnlyFavorites && selectedCategoryId == category.id
-                FilterChip(
-                    selected = isSelected,
-                    onClick = {
-                        showOnlyFavorites = false
-                        selectedCategoryId = category.id
-                    },
-                    label = { Text("${category.name} (${category.channelCount})") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = CalmGold,
-                        selectedLabelColor = NightNavy,
-                        containerColor = DarkSportsBlue,
-                        labelColor = SnowWhite
-                    ),
-                    modifier = Modifier.testTag("filter_cat_${category.id}")
-                )
-            }
-        }
-
-        // Channels List
-        if (filteredChannels.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 96.dp),
-                contentAlignment = Alignment.Center
+        Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.weight(0.36f).fillMaxHeight().clip(RoundedCornerShape(12.dp))
+                    .background(CardBackground).padding(horizontal = 6.dp, vertical = 8.dp)
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = Icons.Default.Tv,
-                        contentDescription = null,
-                        tint = TextMuted,
-                        modifier = Modifier.size(54.dp)
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "لم يتم العثور على قنوات تطابق البحث",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = TextMuted
-                    )
-                }
-            }
-        } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(bottom = 96.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                item(key = "channel_results_summary") {
-                    Row(modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text(if (showOnlyFavorites) "قنواتك المفضلة" else "القنوات المتاحة",
-                            color = SnowWhite, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                        Surface(color = DarkSportsBlue, shape = RoundedCornerShape(50)) {
-                            Text("${filteredChannels.size} قناة", color = CalmGold,
-                                style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
+                Text("التصنيفات", color = CalmGold, fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(horizontal = 5.dp, vertical = 5.dp))
+                if (visibleCategories.isEmpty()) EmptyBrowserMessage("لا توجد تصنيفات مطابقة")
+                else LazyColumn(verticalArrangement = Arrangement.spacedBy(5.dp), contentPadding = PaddingValues(bottom = 8.dp)) {
+                    items(visibleCategories, key = { it.id }) { category ->
+                        val selected = selectedCategoryId == category.id
+                        Surface(
+                            color = if (selected) CalmGold.copy(alpha = 0.20f) else DarkSportsBlue,
+                            shape = RoundedCornerShape(9.dp),
+                            border = BorderStroke(if (selected) 1.5.dp else 1.dp, if (selected) CalmGold else CardBorder),
+                            modifier = Modifier.fillMaxWidth().testTag("category_" + category.id)
+                                .clickable { onCategorySelected(category.id) }
+                        ) {
+                            Column(Modifier.padding(horizontal = 8.dp, vertical = 9.dp)) {
+                                Text(category.name, color = if (selected) CalmGold else SnowWhite,
+                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                    style = MaterialTheme.typography.bodyMedium)
+                                Spacer(Modifier.height(3.dp))
+                                Text("ID: " + category.id, color = TextMuted, style = MaterialTheme.typography.labelSmall)
+                            }
                         }
                     }
                 }
-                items(filteredChannels) { channel ->
-                    ChannelItemCard(
-                        channel = channel,
-                        onClick = { onSelectChannel(channel) },
-                        onToggleFavorite = { onToggleFavorite(channel.id) }
-                    )
+            }
+
+            Column(
+                modifier = Modifier.weight(0.64f).fillMaxHeight().clip(RoundedCornerShape(12.dp))
+                    .background(CardBackground).padding(horizontal = 7.dp, vertical = 8.dp)
+            ) {
+                val selectedCategory = categories.firstOrNull { it.id == selectedCategoryId }
+                Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 5.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text(selectedCategory?.name ?: "القنوات", color = CalmGold,
+                        fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                    Text(visibleChannels.size.toString(), color = TextMuted, style = MaterialTheme.typography.labelSmall)
+                }
+                if (visibleChannels.isEmpty()) EmptyBrowserMessage(
+                    if (selectedCategory == null) "اختر تصنيفاً لعرض قنواته" else "لا توجد قنوات في هذا التصنيف"
+                ) else LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp), contentPadding = PaddingValues(bottom = 12.dp)) {
+                    items(visibleChannels, key = { it.id }) { channel ->
+                        ChannelBrowserRow(
+                            channel = channel, isCurrent = currentChannelId == channel.id,
+                            isFavorite = favorites.contains(channel.id) || channel.isFavorite,
+                            onClick = { onSelectChannel(channel) },
+                            onToggleFavorite = { onToggleFavorite(channel.id) }
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ChannelBrowserRow(
+    channel: Channel, isCurrent: Boolean, isFavorite: Boolean,
+    onClick: () -> Unit, onToggleFavorite: () -> Unit
+) {
+    var logoFailed by remember(channel.logoUrl) { mutableStateOf(channel.logoUrl.isBlank()) }
+    Surface(
+        color = if (isCurrent) CalmGold.copy(alpha = 0.16f) else DarkSportsBlue,
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(if (isCurrent) 1.5.dp else 1.dp, if (isCurrent) CalmGold else CardBorder),
+        modifier = Modifier.fillMaxWidth().testTag("channel_item_" + channel.id).clickable(onClick = onClick)
+    ) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 7.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(42.dp).clip(CircleShape).background(CardBorder), contentAlignment = Alignment.Center) {
+                if (!logoFailed) AsyncImage(
+                    model = channel.logoUrl, contentDescription = "شعار " + channel.name,
+                    modifier = Modifier.fillMaxSize().clip(CircleShape), onError = { logoFailed = true }
+                ) else Text(channel.name.trim().firstOrNull()?.toString() ?: "؟", color = CalmGold,
+                    fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            }
+            Spacer(Modifier.width(7.dp))
+            Column(Modifier.weight(1f)) {
+                Text(channel.name, color = if (isCurrent) CalmGold else SnowWhite,
+                    fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                if (isCurrent) Text("القناة الحالية", color = CalmGold, style = MaterialTheme.typography.labelSmall)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(channel.channelNumber.toString(), color = CalmGold, fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.labelLarge)
+                IconButton(onClick = onToggleFavorite, modifier = Modifier.size(30.dp)) {
+                    Icon(Icons.Default.Star, contentDescription = if (isFavorite) "إزالة من المفضلة" else "إضافة للمفضلة",
+                        tint = if (isFavorite) CalmGold else TextMuted, modifier = Modifier.size(17.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyBrowserMessage(message: String) {
+    Box(Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.Center) {
+        Text(message, color = TextMuted, style = MaterialTheme.typography.bodySmall)
     }
 }
