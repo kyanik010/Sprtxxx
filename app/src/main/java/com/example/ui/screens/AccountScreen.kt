@@ -91,7 +91,7 @@ fun AccountScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "النوع: ${if (subscription.type == SubscriptionType.XTREAM_CODES) "Xtream Codes API" else if (subscription.type == SubscriptionType.M3U_PLAYLIST) "M3U Playlist" else "الباقة الرياضية المدمجة"}",
+                                text = "النوع: ${if (subscription.type == SubscriptionType.XTREAM_CODES) "Xtream Codes API" else if (subscription.type == SubscriptionType.M3U_PLAYLIST) "M3U Playlist" else "غير محدد"}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = CalmGold
                             )
@@ -114,7 +114,7 @@ fun AccountScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "مفعل ونشط",
+                                    text = if (subscription.isActive) "تم الاتصال" else "غير متصل",
                                     color = SportsGreen,
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold
@@ -345,12 +345,6 @@ fun AccountScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("m3u_url_input")
-                        )
-                    } else {
-                        Text(
-                            text = "سيتم استخدام باقة قنوات ماتش نايت الرياضية الموثقة المباشرة (beIN, Alkass, SSC, AD Sports).",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = CalmGold
                         )
                     }
 
