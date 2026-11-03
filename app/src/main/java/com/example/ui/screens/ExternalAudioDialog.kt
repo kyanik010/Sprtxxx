@@ -26,38 +26,16 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.data.model.AudioCommentarySource
+import com.example.data.model.AudioSourceCategory
 import com.example.data.model.Channel
 import com.example.data.model.ExternalAudioState
 import com.example.ui.theme.*
-
-private fun isSupportedCommentaryChannel(channel: Channel): Boolean {
-    fun normalize(value: String): String = value
-        .lowercase()
-        .replace(Regex("[\\u064B-\\u065F\\u0670]"), "")
-        .replace('أ', 'ا')
-        .replace('إ', 'ا')
-        .replace('آ', 'ا')
-        .replace(Regex("[^a-z0-9\\u0600-\\u06FF]+"), " ")
-        .trim()
-
-    val searchable = normalize("${channel.name} ${channel.categoryId}")
-    val isBeinSports = listOf(
-        "bein sports", "bein sport", "beinsports", "beinsport",
-        "be in sports", "be in sport",
-        "بي ان سبورت", "بي ان", "بين سبورت"
-    ).any { searchable.contains(it) }
-
-    val isAlwan = Regex("""\b(alwan|al wan)\b""").containsMatchIn(searchable) ||
-        searchable.contains("الوان")
-
-    return isBeinSports || isAlwan
-}
 
 @Composable
 fun ExternalAudioDialog(
     currentVideoChannel: Channel,
     externalAudioState: ExternalAudioState,
-    allChannels: List<Channel>,
+    audioSources: List<AudioCommentarySource>,
     onSelectAudioSource: (AudioCommentarySource) -> Unit,
     onAdjustSync: (Long) -> Unit,
     onResetSync: () -> Unit,
@@ -66,27 +44,17 @@ fun ExternalAudioDialog(
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
-    // Only expose beIN SPORTS and Alwan channels that actually exist in the
-    // user's imported subscription. Never offer unrelated IPTV channels as audio.
-    val audioSources = remember(allChannels, searchQuery, currentVideoChannel.id) {
-        allChannels
-            .filter { it.id != currentVideoChannel.id }
-            .filter { isSupportedCommentaryChannel(it) }
-            .filter {
-                searchQuery.isBlank() ||
-                    it.name.contains(searchQuery, ignoreCase = true) ||
-                    it.categoryId.contains(searchQuery, ignoreCase = true)
-            }
-            .map {
-                AudioCommentarySource(
-                    channelId = it.id,
-                    channelName = it.name,
-                    streamUrl = it.streamUrl,
-                    commentatorName = it.currentProgram,
-                    logoUrl = it.logoUrl
-                )
-            }
+    // Sources are prepared and cached by the repository as subscription data is loaded.
+    val filteredSources = remember(audioSources, searchQuery, currentVideoChannel.id) {
+        audioSources.filter { source ->
+            source.channelId != currentVideoChannel.id &&
+                (searchQuery.isBlank() ||
+                    source.channelName.contains(searchQuery, ignoreCase = true) ||
+                    source.commentatorName.contains(searchQuery, ignoreCase = true))
+        }
     }
+    val beinSources = filteredSources.filter { it.category == AudioSourceCategory.BEIN_SPORTS }
+    val alwanSources = filteredSources.filter { it.category == AudioSourceCategory.ALWAN }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -423,103 +391,82 @@ fun ExternalAudioDialog(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    if (audioSources.isEmpty()) {
-                        item {
-                            Text(
-                                text = "لا توجد قنوات beIN SPORTS أو ألوان في اشتراكك.",
-                                color = TextMuted,
-                                style = MaterialTheme.typography.bodyMedium,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 24.dp)
-                                    .testTag("audio_sources_empty")
-                            )
-                        }
+                    item { AudioSourceGroupHeader("beIN SPORTS", beinSources.size, "audio_group_bein") }
+                    if (beinSources.isEmpty()) item { AudioSourceEmptyState("لا توجد قنوات beIN SPORTS في هذا الاشتراك.") }
+                    items(beinSources, key = { it.channelId }) { source ->
+                        AudioSourceRow(
+                            source = source,
+                            isSelected = externalAudioState.isExternalAudioActive &&
+                                externalAudioState.activeSource?.channelId == source.channelId,
+                            onClick = { onSelectAudioSource(source) }
+                        )
                     }
-                    items(audioSources) { source ->
-                        val isSelected = externalAudioState.isExternalAudioActive &&
-                                externalAudioState.activeSource?.channelId == source.channelId
-
-                        Card(
-                            shape = RoundedCornerShape(10.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isSelected) DarkSportsBlue else CardBackground
-                            ),
-                            border = BorderStroke(
-                                width = if (isSelected) 2.dp else 1.dp,
-                                color = if (isSelected) CalmGold else CardBorder
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .testTag("audio_source_${source.channelId}")
-                                .clickable {
-                                    onSelectAudioSource(source)
-                                }
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Mic,
-                                        contentDescription = null,
-                                        tint = if (isSelected) CalmGold else TextMuted,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    Column {
-                                        Text(
-                                            text = source.channelName,
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            color = if (isSelected) CalmGold else SnowWhite,
-                                            fontWeight = FontWeight.Bold,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        Text(
-                                            text = source.commentatorName,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = TextMuted,
-                                            maxLines = 1
-                                        )
-                                    }
-                                }
-
-                                if (isSelected) {
-                                    Icon(
-                                        imageVector = Icons.Default.CheckCircle,
-                                        contentDescription = "محدد",
-                                        tint = CalmGold,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                } else {
-                                    Surface(
-                                        color = DarkSportsBlue,
-                                        shape = RoundedCornerShape(6.dp),
-                                        border = BorderStroke(0.5.dp, CardBorder)
-                                    ) {
-                                        Text(
-                                            text = "تفعيل الصوت",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = SnowWhite,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
+                    item { AudioSourceGroupHeader("ALWAN", alwanSources.size, "audio_group_alwan") }
+                    if (alwanSources.isEmpty()) item { AudioSourceEmptyState("لا توجد قنوات ALWAN في هذا الاشتراك.") }
+                    items(alwanSources, key = { it.channelId }) { source ->
+                        AudioSourceRow(
+                            source = source,
+                            isSelected = externalAudioState.isExternalAudioActive &&
+                                externalAudioState.activeSource?.channelId == source.channelId,
+                            onClick = { onSelectAudioSource(source) }
+                        )
                     }
                 }
             }
         }
+        }
+    }
+}
+
+
+@Composable
+private fun AudioSourceGroupHeader(title: String, count: Int, tag: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 2.dp).testTag(tag),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(title, style = MaterialTheme.typography.titleSmall, color = CalmGold, fontWeight = FontWeight.Bold)
+        Text(count.toString(), style = MaterialTheme.typography.labelSmall, color = TextMuted)
+    }
+}
+
+@Composable
+private fun AudioSourceEmptyState(message: String) {
+    Text(
+        text = message,
+        color = TextMuted,
+        style = MaterialTheme.typography.labelSmall,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 5.dp)
+    )
+}
+
+@Composable
+private fun AudioSourceRow(source: AudioCommentarySource, isSelected: Boolean, onClick: () -> Unit) {
+    Card(
+        shape = RoundedCornerShape(9.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isSelected) DarkSportsBlue else CardBackground),
+        border = BorderStroke(if (isSelected) 1.5.dp else 1.dp, if (isSelected) CalmGold else CardBorder),
+        modifier = Modifier.fillMaxWidth().testTag("audio_source_${source.channelId}").clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 10.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Default.Headphones, contentDescription = null, tint = if (isSelected) CalmGold else TextMuted, modifier = Modifier.size(19.dp))
+                Spacer(modifier = Modifier.width(9.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(source.channelName, style = MaterialTheme.typography.bodyMedium, color = if (isSelected) CalmGold else SnowWhite, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (source.commentatorName.isNotBlank()) Text(source.commentatorName, style = MaterialTheme.typography.labelSmall, color = TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+            if (isSelected) {
+                Icon(Icons.Default.CheckCircle, contentDescription = "محدد", tint = CalmGold, modifier = Modifier.size(21.dp))
+            } else {
+                Text("تفعيل الصوت", style = MaterialTheme.typography.labelSmall, color = SnowWhite, modifier = Modifier.background(DarkSportsBlue, RoundedCornerShape(6.dp)).padding(horizontal = 9.dp, vertical = 6.dp))
+            }
         }
     }
 }

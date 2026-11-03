@@ -9,6 +9,14 @@ import java.io.StringReader
 class IptvRepositoryTest {
 
     @Test
+    fun audioSourceClassifierSeparatesBeinAndAlwan() {
+        assertEquals(AudioSourceCategory.BEIN_SPORTS, classifyAudioSource("beIN SPORTS 1 HD", "sports"))
+        assertEquals(AudioSourceCategory.ALWAN, classifyAudioSource("ALWAN SPORT", "sports"))
+        assertEquals(AudioSourceCategory.ALWAN, classifyAudioSource("ألوان 2", "عام"))
+        assertNull(classifyAudioSource("الكأس 1 HD", "sports"))
+    }
+
+    @Test
     fun testM3uParsingLogic() {
         val sampleM3u = """
             #EXTM3U

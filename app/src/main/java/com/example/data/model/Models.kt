@@ -67,13 +67,42 @@ data class SubscriptionProfile(
     val deviceModel: String = ""
 )
 
+enum class AudioSourceCategory {
+    BEIN_SPORTS,
+    ALWAN
+}
+
 data class AudioCommentarySource(
     val channelId: String,
     val channelName: String,
     val streamUrl: String,
     val commentatorName: String,
-    val logoUrl: String = ""
+    val logoUrl: String = "",
+    val category: AudioSourceCategory = AudioSourceCategory.BEIN_SPORTS
 )
+
+fun classifyAudioSource(name: String, categoryId: String): AudioSourceCategory? {
+    val searchable = "$name $categoryId"
+        .lowercase()
+        .replace(Regex("[\\u064B-\\u065F\\u0670]"), "")
+        .replace('أ', 'ا')
+        .replace('إ', 'ا')
+        .replace('آ', 'ا')
+        .replace(Regex("[^a-z0-9\\u0600-\\u06FF]+"), " ")
+        .trim()
+
+    val isBein = listOf(
+        "bein sports", "bein sport", "beinsports", "beinsport",
+        "be in sports", "be in sport", "بي ان سبورت", "بي ان", "بين سبورت"
+    ).any(searchable::contains)
+    if (isBein) return AudioSourceCategory.BEIN_SPORTS
+
+    val isAlwan = Regex("""\\b(alwan|al wan)\\b""").containsMatchIn(searchable) ||
+        searchable.contains("الوان")
+    if (isAlwan) return AudioSourceCategory.ALWAN
+
+    return null
+}
 
 data class ExternalAudioState(
     val isExternalAudioActive: Boolean = false,

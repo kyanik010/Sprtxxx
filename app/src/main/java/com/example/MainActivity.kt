@@ -55,6 +55,7 @@ class MainActivity : ComponentActivity() {
             MatchNightTheme {
                 val channels by repository.channels.collectAsState()
                 val categories by repository.categories.collectAsState()
+                val audioSources by repository.audioSources.collectAsState()
                 val favorites by repository.favorites.collectAsState()
                 val history by repository.history.collectAsState()
                 val subscription by repository.currentSubscription.collectAsState()
@@ -191,6 +192,7 @@ class MainActivity : ComponentActivity() {
                             AppScreen.PLAYER -> {
                                 PlayerScreen(
                                     playerEngine = playerEngine,
+                                    audioSources = audioSources,
                                     onBack = {
                                         currentScreen = previousScreen
                                     },

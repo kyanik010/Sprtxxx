@@ -36,6 +36,8 @@ class IptvRepository(private val context: Context) {
     private val _categories = MutableStateFlow<List<Category>>(emptyList())
     val categories: StateFlow<List<Category>> = _categories.asStateFlow()
 
+    private val _audioSources = MutableStateFlow<List<AudioCommentarySource>>(emptyList())
+    val audioSources: StateFlow<List<AudioCommentarySource>> = _audioSources.asStateFlow()
 
     private val _favorites = MutableStateFlow<Set<String>>(emptySet())
     val favorites: StateFlow<Set<String>> = _favorites.asStateFlow()
@@ -132,6 +134,35 @@ class IptvRepository(private val context: Context) {
         }
     }
 
+    private fun syncAudioSources(channels: List<Channel>) {
+        val sources = channels.mapNotNull { channel ->
+            val category = classifyAudioSource(channel.name, channel.categoryId) ?: return@mapNotNull null
+            AudioCommentarySource(
+                channelId = channel.id,
+                channelName = channel.name,
+                streamUrl = channel.streamUrl,
+                commentatorName = channel.currentProgram,
+                logoUrl = channel.logoUrl,
+                category = category
+            )
+        }
+        _audioSources.value = sources
+
+        // Cache display metadata only. Stream URLs contain the subscription credentials.
+        val cachedSources = JSONArray()
+        sources.forEach { source ->
+            cachedSources.put(
+                JSONObject()
+                    .put("channelId", source.channelId)
+                    .put("channelName", source.channelName)
+                    .put("commentatorName", source.commentatorName)
+                    .put("logoUrl", source.logoUrl)
+                    .put("category", source.category.name)
+            )
+        }
+        prefs.edit().putString("audio_sources_cache", cachedSources.toString()).apply()
+    }
+
     fun addToHistory(channelId: String) {
         val current = _history.value.toMutableList()
         current.remove(channelId)
@@ -217,6 +248,7 @@ class IptvRepository(private val context: Context) {
         }
 
         if (parsedChannels.isNotEmpty()) {
+            syncAudioSources(parsedChannels)
             _channels.value = parsedChannels
             _categories.value = categoriesSet.map { Category(id = it, name = it, channelCount = parsedChannels.count { c -> c.categoryId == it }) }
             return parsedChannels.size
@@ -284,6 +316,7 @@ class IptvRepository(private val context: Context) {
         }
 
         if (parsedChannels.isNotEmpty()) {
+            syncAudioSources(parsedChannels)
             _channels.value = parsedChannels
             _categories.value = categoriesMap.map { Category(id = it.key, name = it.key, channelCount = it.value) }
             return parsedChannels.size

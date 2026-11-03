@@ -48,6 +48,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun PlayerScreen(
     playerEngine: MatchNightPlayerEngine,
+    audioSources: List<AudioCommentarySource>,
     onBack: () -> Unit,
     onToggleFavorite: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -585,7 +586,7 @@ fun PlayerScreen(
             ExternalAudioDialog(
                 currentVideoChannel = currentChannel!!,
                 externalAudioState = externalAudioState,
-                allChannels = allChannels,
+                audioSources = audioSources,
                 onSelectAudioSource = { source ->
                     playerEngine.attachExternalAudioSource(source)
                 },
