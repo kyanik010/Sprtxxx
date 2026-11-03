@@ -4,6 +4,10 @@ ENGINE_BUILD = Path(
     "vendor/OpenVPNGateClientApp/src/external/OpenVPNEngine/main/build.gradle.kts"
 )
 
+CORE_BUILD = Path(
+    "vendor/OpenVPNGateClientApp/src/core/build.gradle.kts"
+)
+
 def replace_once(source: str, old: str, new: str, label: str) -> str:
     count = source.count(old)
     if count != 1:
@@ -66,3 +70,23 @@ text = replace_once(
 
 ENGINE_BUILD.write_text(text, encoding="utf-8")
 print(f"Applied AGP 9 public DSL compatibility patch to {ENGINE_BUILD}")
+
+if not CORE_BUILD.is_file():
+    raise SystemExit(f"OpenVPN core build file not found: {CORE_BUILD}")
+
+core_text = CORE_BUILD.read_text(encoding="utf-8")
+core_text = replace_once(
+    core_text,
+    """    buildFeatures {
+        viewBinding = true
+        buildConfig = true
+    }""",
+    """    buildFeatures {
+        viewBinding = true
+        buildConfig = true
+        resValues = true
+    }""",
+    "AGP 9 resource-values build feature",
+)
+CORE_BUILD.write_text(core_text, encoding="utf-8")
+print(f"Enabled AGP 9 resource values for {CORE_BUILD}")
