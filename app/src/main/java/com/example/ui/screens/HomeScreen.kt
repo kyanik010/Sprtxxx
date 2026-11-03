@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.data.model.Category
@@ -58,6 +59,7 @@ fun HomeScreen(
         else channels.filter { it.name.contains(searchQuery.trim(), ignoreCase = true) }.take(12)
     }
     val lastWatched = historyChannels.firstOrNull()
+    val featuredChannel = lastWatched ?: channels.firstOrNull()
 
     LazyColumn(
         modifier = modifier
@@ -147,6 +149,12 @@ fun HomeScreen(
                 }
             }
         } else {
+            if (featuredChannel != null) {
+                item(key = "live_hero") {
+                    LiveHeroCard(channel = featuredChannel, onClick = { onSelectChannel(featuredChannel) })
+                }
+            }
+
             if (lastWatched != null) {
                 item(key = "continue_watching") {
                     SectionHeader(title = "متابعة المشاهدة")
@@ -311,6 +319,52 @@ fun QuickChannelCard(channel: Channel, onClick: () -> Unit, modifier: Modifier =
             if (channel.resolution.isNotBlank()) {
                 Spacer(Modifier.height(5.dp))
                 Text(channel.resolution, color = CalmGold, style = MaterialTheme.typography.labelSmall, fontSize = 10.sp)
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun LiveHeroCard(channel: Channel, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp).heightIn(min = 174.dp)
+            .clickable(onClick = onClick).testTag("home_live_hero"),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = DarkSportsBlue),
+        border = androidx.compose.foundation.BorderStroke(1.dp, CalmGold.copy(alpha = 0.65f))
+    ) {
+        Box(
+            modifier = Modifier.fillMaxWidth()
+                .background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFF263B50), NightNavy, CardBackground)))
+                .padding(18.dp)
+        ) {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                    Surface(color = LiveRed.copy(alpha = 0.16f), shape = RoundedCornerShape(50),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, LiveRed.copy(alpha = 0.7f))) {
+                        Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Box(Modifier.size(7.dp).clip(CircleShape).background(LiveRed))
+                            Text("قنوات مباشرة", color = SnowWhite, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    Text(channel.name, color = SnowWhite, style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(channel.currentProgram.ifBlank { "شاهد البث المباشر من اشتراكك" }, color = TextMuted,
+                        style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Button(onClick = onClick, colors = ButtonDefaults.buttonColors(containerColor = CalmGold),
+                        shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = null, tint = NightNavy)
+                        Spacer(Modifier.width(6.dp))
+                        Text("شاهد الآن", color = NightNavy, fontWeight = FontWeight.Bold)
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                AsyncImage(model = channel.logoUrl.takeIf { it.isNotBlank() }, contentDescription = channel.name,
+                    modifier = Modifier.size(88.dp).clip(RoundedCornerShape(18.dp))
+                        .background(NightNavy.copy(alpha = 0.75f)).padding(8.dp),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit)
             }
         }
     }
