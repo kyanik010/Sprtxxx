@@ -109,18 +109,19 @@ class MainActivity : ComponentActivity() {
                         // Hide bottom bar when inside fullscreen video player or landscape video
                         if (currentScreen != AppScreen.PLAYER && currentScreen != AppScreen.SETUP) {
                             NavigationBar(
-                                containerColor = DarkSportsBlue,
+                                containerColor = NightNavy,
                                 contentColor = SnowWhite,
                                 tonalElevation = 8.dp,
                                 modifier = Modifier
                                     .windowInsetsPadding(WindowInsets.navigationBars)
+                                    .height(if (isLandscape) 62.dp else 78.dp)
                                     .testTag("main_bottom_nav")
                             ) {
                                 NavigationBarItem(
                                     selected = currentScreen == AppScreen.HOME,
                                     onClick = { currentScreen = AppScreen.HOME },
                                     icon = { Icon(Icons.Default.Home, contentDescription = "الرئيسية") },
-                                    label = { Text("الرئيسية", fontWeight = FontWeight.SemiBold) },
+                                    label = if (isLandscape) null else ({ Text("الرئيسية", fontWeight = FontWeight.SemiBold) }),
                                     colors = NavigationBarItemDefaults.colors(
                                         selectedIconColor = NightNavy,
                                         selectedTextColor = CalmGold,
@@ -134,7 +135,7 @@ class MainActivity : ComponentActivity() {
                                     selected = currentScreen == AppScreen.CHANNELS || currentScreen == AppScreen.CATEGORY_CHANNELS,
                                     onClick = { currentScreen = AppScreen.CHANNELS },
                                     icon = { Icon(Icons.Default.Tv, contentDescription = "القنوات") },
-                                    label = { Text("القنوات", fontWeight = FontWeight.SemiBold) },
+                                    label = if (isLandscape) null else ({ Text("القنوات", fontWeight = FontWeight.SemiBold) }),
                                     colors = NavigationBarItemDefaults.colors(
                                         selectedIconColor = NightNavy,
                                         selectedTextColor = CalmGold,
@@ -148,7 +149,7 @@ class MainActivity : ComponentActivity() {
                                     selected = currentScreen == AppScreen.ACCOUNT,
                                     onClick = { currentScreen = AppScreen.ACCOUNT },
                                     icon = { Icon(Icons.Default.AccountCircle, contentDescription = "الاشتراك") },
-                                    label = { Text("الاشتراك", fontWeight = FontWeight.SemiBold) },
+                                    label = if (isLandscape) null else ({ Text("الاشتراك", fontWeight = FontWeight.SemiBold) }),
                                     colors = NavigationBarItemDefaults.colors(
                                         selectedIconColor = NightNavy,
                                         selectedTextColor = CalmGold,
