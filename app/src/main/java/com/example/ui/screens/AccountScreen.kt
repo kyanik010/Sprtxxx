@@ -127,21 +127,11 @@ fun AccountScreen(
                     Divider(color = CardBorder, thickness = 0.5.dp)
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Details Grid
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column {
-                            Text("تاريخ الانتهاء", style = MaterialTheme.typography.labelSmall, color = TextMuted)
-                            Text(subscription.expiryDate, style = MaterialTheme.typography.bodyLarge, color = SnowWhite, fontWeight = FontWeight.SemiBold)
-                        }
-                        Column {
-                            Text("الأجهزة المتصلة", style = MaterialTheme.typography.labelSmall, color = TextMuted)
-                            Text("${subscription.activeConnections} من ${subscription.maxConnections}", style = MaterialTheme.typography.bodyLarge, color = SnowWhite, fontWeight = FontWeight.SemiBold)
-                        }
-                        Column {
-                            Text("جودة البث", style = MaterialTheme.typography.labelSmall, color = TextMuted)
-                            Text("4K / FHD 50fps", style = MaterialTheme.typography.bodyLarge, color = CalmGold, fontWeight = FontWeight.SemiBold)
-                        }
-                    }
+                    Text(
+                        "القنوات المعروضة مأخوذة من قائمة الاشتراك المحمّلة.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextMuted
+                    )
                 }
             }
         }
@@ -156,7 +146,7 @@ fun AccountScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "معلومات الجهاز والترخيص",
+                        text = "معلومات الجهاز",
                         style = MaterialTheme.typography.titleMedium,
                         color = SnowWhite,
                         fontWeight = FontWeight.Bold
@@ -213,36 +203,7 @@ fun AccountScreen(
             }
         }
 
-        // Support & Instructions Card
-        item {
-            Card(
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = CardBackground),
-                border = BorderStroke(1.dp, CardBorder),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "الدعم الفني وتعليمات التجديد",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = SnowWhite,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "• عند الرغبة في تجديد الاشتراك أو الترقية، يُرجى تزويد فريق الدعم بمعرّف جهازك (${subscription.deviceId}).",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextMuted
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "• التطبيق مخصص للقنوات والمباريات الرياضية بأعلى ثبات ودون تقطيع مع دعم الصوت المعلق البديل.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextMuted
-                    )
-                }
-            }
-        }
+
     }
 
     // Edit Subscription Dialog
