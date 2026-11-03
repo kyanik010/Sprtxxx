@@ -41,7 +41,7 @@ jobs:
           ]
           for path in files:
               source = path.read_text()
-              updated, count = re.subn(r'^\\s*alias\\(libs\\.plugins\\.kotlin\\.android\\)\\s*\\n', '', source, count=1, flags=re.MULTILINE)
+              updated, count = re.subn(r'^\s*alias\(libs\.plugins\.kotlin\.android\)\s*\n', '', source, count=1, flags=re.MULTILINE)
               if count != 1:
                   raise SystemExit(f'Expected exactly one Kotlin Android plugin declaration in {path}; found {count}')
               path.write_text(updated)
