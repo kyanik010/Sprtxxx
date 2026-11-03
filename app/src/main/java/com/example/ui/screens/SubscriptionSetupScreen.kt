@@ -62,7 +62,7 @@ fun SubscriptionSetupScreen(
                         selected = selectedType == SubscriptionType.XTREAM_CODES,
                         onClick = { selectedType = SubscriptionType.XTREAM_CODES; error = null },
                         label = { Text("Xtream Codes") },
-                        leadingIcon = { Icon(Icons.Default.Router, contentDescription = null) },
+                        leadingIcon = { Icon(Icons.Default.Tv, contentDescription = null) },
                         modifier = Modifier.weight(1f),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = CalmGold,
