@@ -97,7 +97,7 @@ fun HomeScreen(
             }
         }
 
-        // Today's Live & Upcoming Matches
+        if (matches.isNotEmpty()) {
         item {
             SectionHeader(
                 title = "مباريات اليوم المباشرة",
@@ -117,7 +117,9 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(20.dp))
         }
 
-        // Live Channels Carousel
+        }
+
+        if (channels.isNotEmpty()) {
         item {
             SectionHeader(
                 title = "أبرز القنوات الرياضية",
@@ -138,6 +140,8 @@ fun HomeScreen(
                 }
             }
             Spacer(modifier = Modifier.height(20.dp))
+        }
+
         }
 
         // Favorites Section
@@ -414,17 +418,19 @@ fun QuickChannelCard(
                 maxLines = 1
             )
             Spacer(modifier = Modifier.height(4.dp))
-            Surface(
-                color = SportsGreen.copy(alpha = 0.2f),
-                shape = RoundedCornerShape(4.dp)
-            ) {
-                Text(
-                    text = channel.resolution,
-                    color = SportsGreen,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontSize = 9.sp,
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                )
+            if (channel.resolution.isNotBlank()) {
+                Surface(
+                    color = SportsGreen.copy(alpha = 0.2f),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text(
+                        text = channel.resolution,
+                        color = SportsGreen,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 9.sp,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                    )
+                }
             }
         }
     }
