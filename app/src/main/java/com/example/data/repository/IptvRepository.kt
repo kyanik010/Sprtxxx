@@ -215,34 +215,42 @@ class IptvRepository(private val context: Context) {
         val url = "$cleanServer/player_api.php?username=$user&password=$pass&action=get_live_streams"
         val request = Request.Builder().url(url).build()
 
-        val response = httpClient.newCall(request).execute()
-        if (!response.isSuccessful) throw Exception("فشل الاتصال بسيرفر إكستريم: رمز ${response.code}")
-
-        val jsonStr = response.body?.string() ?: throw Exception("بيانات فارغة من السيرفر")
+        val jsonStr = httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw Exception("فشل الاتصال بسيرفر إكستريم: رمز ${response.code}")
+            }
+            response.body?.string() ?: throw Exception("بيانات فارغة من السيرفر")
+        }
         val jsonArray = JSONArray(jsonStr)
 
-        val parsedChannels = mutableListOf<Channel>()
+        val parsedChannels = ArrayList<Channel>(jsonArray.length())
         val categoriesSet = linkedSetOf<String>()
+        val seenStreamIds = HashSet<String>(jsonArray.length())
 
         for (i in 0 until jsonArray.length()) {
-            val obj = jsonArray.getJSONObject(i)
-            val streamId = obj.optString("stream_id")
-            val name = obj.optString("name")
-            val category = obj.optString("category_id", "عام")
-            val logo = obj.optString("stream_icon", "")
+            val obj = jsonArray.optJSONObject(i) ?: continue
+            val streamId = obj.optString("stream_id").trim()
+            // Xtream IDs must be present and unique because Compose lazy lists use
+            // channel IDs as stable keys; duplicate keys can crash screen rendering.
+            if (streamId.isBlank() || !seenStreamIds.add(streamId)) continue
+
             val num = obj.optInt("num", i + 1)
-            val streamUrl = "$cleanServer/live/$user/$pass/$streamId.m3u8"
+            val name = obj.optString("name").trim().ifBlank { "قناة $num" }
+            val category = obj.optString("category_id").takeIf { it.isNotBlank() } ?: "عام"
+            val logo = obj.optString("stream_icon")
+            val streamUrl = "${cleanServer}/live/$user/$pass/$streamId.m3u8"
+            val channelId = "xtream_$streamId"
 
             categoriesSet.add(category)
             parsedChannels.add(
                 Channel(
-                    id = "xtream_$streamId",
+                    id = channelId,
                     channelNumber = num,
                     name = name,
                     categoryId = category,
                     streamUrl = streamUrl,
                     logoUrl = logo,
-                    isFavorite = _favorites.value.contains("xtream_$streamId")
+                    isFavorite = _favorites.value.contains(channelId)
                 )
             )
         }
@@ -275,14 +283,25 @@ class IptvRepository(private val context: Context) {
                 }
             }.getOrDefault(emptyMap())
 
+            // Aggregate category data in one pass instead of scanning all channels
+            // once per category (O(channels × categories)) on large provider playlists.
+            val categoryCounts = HashMap<String, Int>(categoriesSet.size)
+            val representativeLogos = HashMap<String, String>(categoriesSet.size)
+            for (channel in parsedChannels) {
+                categoryCounts[channel.categoryId] = (categoryCounts[channel.categoryId] ?: 0) + 1
+                if (channel.logoUrl.isNotBlank() && representativeLogos[channel.categoryId].isNullOrBlank()) {
+                    representativeLogos[channel.categoryId] = channel.logoUrl
+                }
+            }
+
             _categories.value = categoriesSet.map { id ->
                 val metadata = categoryMetadata[id]
-                val representativeLogo = parsedChannels.firstOrNull { it.categoryId == id && it.logoUrl.isNotBlank() }?.logoUrl.orEmpty()
                 Category(
                     id = id,
                     name = metadata?.first ?: id,
-                    channelCount = parsedChannels.count { it.categoryId == id },
-                    logoUrl = metadata?.second?.takeIf { it.isNotBlank() } ?: representativeLogo
+                    channelCount = categoryCounts[id] ?: 0,
+                    logoUrl = metadata?.second?.takeIf { it.isNotBlank() }
+                        ?: representativeLogos[id].orEmpty()
                 )
             }
             return parsedChannels.size
