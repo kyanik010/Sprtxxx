@@ -71,8 +71,8 @@ fun ExternalAudioDialog(
             modifier = Modifier
                 .align(Alignment.Center)
                 .fillMaxWidth(if (isLandscape) 0.78f else 0.92f)
-                .fillMaxHeight(0.60f)
-                .heightIn(max = if (isLandscape) 560.dp else maxHeight * 0.60f)
+                .wrapContentHeight()
+                .heightIn(max = maxHeight * 0.60f)
                 .widthIn(max = if (isLandscape) 980.dp else 560.dp)
                 .testTag("external_audio_dialog"),
             shape = RoundedCornerShape(20.dp),
@@ -81,7 +81,7 @@ fun ExternalAudioDialog(
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
                     .padding(if (isLandscape) 10.dp else 12.dp)
             ) {
