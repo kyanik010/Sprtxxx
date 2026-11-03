@@ -136,7 +136,7 @@ for test_file, obsolete_config in TEST_CONFIGS:
     test_text = replace_once(
         test_text,
         'manifest = "src/main/AndroidManifest.xml"',
-        'manifest = "src/test/AndroidManifest.xml"',
+        'manifest = "vendor/OpenVPNGateClientApp/src/core/src/test/AndroidManifest.xml"',
         f"Robolectric test manifest path in {test_file}",
     )
     test_file.write_text(test_text, encoding="utf-8")
