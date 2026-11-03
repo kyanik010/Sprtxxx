@@ -19,9 +19,12 @@ dependencyResolutionManagement {
   repositories {
     google()
     mavenCentral()
+    maven { url = uri("https://jitpack.io") }
   }
 }
 
 rootProject.name = "MatchNight IPTV"
 
-include(":app")
+include(":app", ":vpncore", ":openVpnEngine")
+project(":vpncore").projectDir = file("vendor/OpenVPNGateClientApp/src/core")
+project(":openVpnEngine").projectDir = file("vendor/OpenVPNGateClientApp/src/external/OpenVPNEngine/main")
