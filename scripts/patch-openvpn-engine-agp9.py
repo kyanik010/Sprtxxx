@@ -133,5 +133,25 @@ for test_file, obsolete_config in TEST_CONFIGS:
         "",
         f"obsolete Robolectric packageName setting in {test_file}",
     )
+    test_text = replace_once(
+        test_text,
+        'manifest = "src/main/AndroidManifest.xml"',
+        'manifest = "src/test/AndroidManifest.xml"',
+        f"Robolectric test manifest path in {test_file}",
+    )
     test_file.write_text(test_text, encoding="utf-8")
-    print(f"Removed unsupported Robolectric packageName setting from {test_file}")
+    print(f"Updated Robolectric manifest configuration in {test_file}")
+
+# Robolectric 4.10.2 no longer accepts @Config(packageName=...). The production
+# library manifest intentionally relies on the Gradle namespace and has no
+# package attribute, so use a minimal test-only manifest that supplies it.
+TEST_MANIFEST = Path("vendor/OpenVPNGateClientApp/src/core/src/test/AndroidManifest.xml")
+TEST_MANIFEST.parent.mkdir(parents=True, exist_ok=True)
+TEST_MANIFEST.write_text(
+    '<?xml version="1.0" encoding="utf-8"?>\\n'
+    '<manifest xmlns:android="http://schemas.android.com/apk/res/android" '
+    'package="com.yahorzabotsin.openvpnclientgate.core">\\n'
+    '</manifest>\\n',
+    encoding="utf-8",
+)
+print(f"Created Robolectric test manifest at {TEST_MANIFEST}")
