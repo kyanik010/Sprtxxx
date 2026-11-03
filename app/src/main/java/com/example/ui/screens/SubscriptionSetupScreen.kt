@@ -7,7 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.Router
+import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -50,7 +50,7 @@ fun SubscriptionSetupScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Icon(Icons.Default.Router, contentDescription = null, tint = CalmGold, modifier = Modifier.size(42.dp))
+                Icon(Icons.Default.Tv, contentDescription = null, tint = CalmGold, modifier = Modifier.size(42.dp))
                 Text("مرحباً بك", style = MaterialTheme.typography.headlineMedium, color = SnowWhite, fontWeight = FontWeight.ExtraBold)
                 Text(
                     "أضف اشتراك IPTV الخاص بك للبدء",
