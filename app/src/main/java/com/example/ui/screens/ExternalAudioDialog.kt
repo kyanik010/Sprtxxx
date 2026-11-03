@@ -47,7 +47,7 @@ private fun isSupportedCommentaryChannel(channel: Channel): Boolean {
         "بي ان سبورت", "بي ان", "بين سبورت"
     ).any { searchable.contains(it) }
 
-    val isAlwan = Regex("""\\b(alwan|al wan)\\b""").containsMatchIn(searchable) ||
+    val isAlwan = Regex("""\b(alwan|al wan)\b""").containsMatchIn(searchable) ||
         searchable.contains("الوان")
 
     return isBeinSports || isAlwan
