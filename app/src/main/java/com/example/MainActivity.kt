@@ -22,10 +22,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +43,7 @@ import com.yahorzabotsin.openvpnclientgate.core.servers.Server
 import com.yahorzabotsin.openvpnclientgate.core.servers.ServerRepository
 import com.yahorzabotsin.openvpnclientgate.core.settings.ServerSource
 import com.yahorzabotsin.openvpnclientgate.core.settings.UserSettingsStore
+import com.yahorzabotsin.openvpnclientgate.vpn.ConnectionState
 import com.yahorzabotsin.openvpnclientgate.vpn.ConnectionStateManager
 import com.yahorzabotsin.openvpnclientgate.vpn.VpnManager
 import org.koin.core.context.GlobalContext
@@ -281,6 +285,47 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onToggleFavorite = { repository.toggleFavorite(it) }
                                 )
+                            }
+                        }
+
+                        // Persistent VPN indicator: its color and label follow the engine's
+                        // confirmed ConnectionStateManager state, not the start-button dispatch.
+                        if (subscription.isActive && currentScreen != AppScreen.SETUP && !showWelcome) {
+                            val (vpnLabel, vpnTint) = when (vpnStatus) {
+                                ConnectionState.CONNECTED -> "متصل" to Color(0xFF43A047)
+                                ConnectionState.CONNECTING -> "يتصل" to CalmGold
+                                ConnectionState.PAUSING -> "إيقاف مؤقت" to CalmGold
+                                ConnectionState.PAUSED -> "متوقف مؤقتاً" to TextMuted
+                                ConnectionState.DISCONNECTING -> "يفصل" to CalmGold
+                                ConnectionState.DISCONNECTED -> "غير متصل" to TextMuted
+                            }
+                            Surface(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(top = 10.dp, end = 12.dp),
+                                shape = RoundedCornerShape(50),
+                                color = NightNavy.copy(alpha = 0.94f),
+                                border = BorderStroke(1.dp, vpnTint.copy(alpha = 0.7f)),
+                                tonalElevation = 3.dp
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.VpnKey,
+                                        contentDescription = "حالة VPN: $vpnLabel",
+                                        tint = vpnTint,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        text = "VPN $vpnLabel",
+                                        color = SnowWhite,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
                         }
                     }
