@@ -82,7 +82,7 @@ fun HomeScreen(
                         color = CalmGold
                     )
                 }
-                LivePulseBadge()
+                Text("IPTV", color = CalmGold, fontWeight = FontWeight.Bold)
             }
         }
 
