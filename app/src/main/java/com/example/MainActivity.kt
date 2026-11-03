@@ -60,6 +60,7 @@ class MainActivity : ComponentActivity() {
                 val favorites by repository.favorites.collectAsState()
                 val history by repository.history.collectAsState()
                 val subscription by repository.currentSubscription.collectAsState()
+                val playingChannel by playerEngine.currentChannel.collectAsState()
 
                 // Keep player engine channels updated for previous/next channel actions
                 LaunchedEffect(channels) {
@@ -75,6 +76,9 @@ class MainActivity : ComponentActivity() {
                     if (selectedCategoryId.isBlank() && categories.isNotEmpty()) {
                         selectedCategoryId = categories.first().id
                     }
+                }
+                LaunchedEffect(playingChannel?.id) {
+                    playingChannel?.let { currentChannelId = it.id }
                 }
                 LaunchedEffect(subscription.isActive) {
                     if (subscription.isActive && currentScreen == AppScreen.SETUP) currentScreen = AppScreen.HOME
