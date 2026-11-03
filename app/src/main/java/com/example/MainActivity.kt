@@ -38,6 +38,8 @@ import com.example.ui.screens.*
 import com.example.ui.theme.*
 import com.yahorzabotsin.openvpnclientgate.core.servers.Server
 import com.yahorzabotsin.openvpnclientgate.core.servers.ServerRepository
+import com.yahorzabotsin.openvpnclientgate.core.settings.ServerSource
+import com.yahorzabotsin.openvpnclientgate.core.settings.UserSettingsStore
 import com.yahorzabotsin.openvpnclientgate.vpn.ConnectionStateManager
 import com.yahorzabotsin.openvpnclientgate.vpn.VpnManager
 import org.koin.core.context.GlobalContext
@@ -290,7 +292,12 @@ class MainActivity : ComponentActivity() {
 
     private suspend fun loadBestVpnServers(): List<Server> {
         val serverRepository = GlobalContext.get().get<ServerRepository>()
-        val servers = serverRepository.getServers(applicationContext, forceRefresh = true)
+        val vpnGateSettings = UserSettingsStore.load(applicationContext).copy(serverSource = ServerSource.VPNGATE)
+        val servers = serverRepository.getServers(
+            context = applicationContext,
+            forceRefresh = true,
+            settingsOverride = vpnGateSettings
+        )
         return servers.asSequence()
             .filter { it.configData.isNotBlank() && it.ip.isNotBlank() }
             .distinctBy { it.ip }
