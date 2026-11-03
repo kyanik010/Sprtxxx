@@ -55,7 +55,7 @@ fun SubscriptionSetupScreen(
                     Icon(Icons.Default.Tv, contentDescription = null, tint = CalmGold,
                         modifier = Modifier.padding(15.dp).size(38.dp))
                 }
-                Text("مرحباً بك في ماتش نايت", style = MaterialTheme.typography.headlineMedium, color = SnowWhite, fontWeight = FontWeight.ExtraBold)
+                Text("مرحباً بك في SONIX TV", style = MaterialTheme.typography.headlineMedium, color = SnowWhite, fontWeight = FontWeight.ExtraBold)
                 Text(
                     "أضف اشتراك IPTV الخاص بك للبدء",
                     style = MaterialTheme.typography.bodyLarge,
