@@ -59,7 +59,7 @@ fun HomeScreen(
         else channels.filter { it.name.contains(searchQuery.trim(), ignoreCase = true) }.take(12)
     }
     val lastWatched = historyChannels.firstOrNull()
-    val featuredChannel = lastWatched ?: channels.firstOrNull()
+    val featuredChannel = channels.firstOrNull { it.id != lastWatched?.id } ?: lastWatched
 
     LazyColumn(
         modifier = modifier
