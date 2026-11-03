@@ -12,6 +12,7 @@ on:
       - 'gradle/**'
       - '.gitmodules'
       - 'vendor/**'
+      - 'scripts/**'
       - 'gradlew'
       - '.github/workflows/build-android.yml'
 
