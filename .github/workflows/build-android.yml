@@ -22,6 +22,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Fetch VPN engine submodules
+        run: |
+          git submodule update --init vendor/OpenVPNGateClientApp
+          git -C vendor/OpenVPNGateClientApp submodule update --init --recursive src/external/OpenVPNEngine
+
+      - name: Install SWIG
+        run: sudo apt-get update && sudo apt-get install -y swig
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -31,7 +39,7 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: platform-tools
+          packages: platform-tools platforms;android-37 build-tools;37.0.0 ndk;29.0.14206865 cmake;3.22.1
           accept-android-sdk-licenses: true
 
       - name: Set up Gradle
@@ -52,7 +60,7 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Build and test
-        run: gradle testDebugUnitTest assembleDebug --stacktrace
+        run: gradle testDebugUnitTest assembleDebug -PPRIMARY_SERVERS_URL=https://openvpngateclient.azurewebsites.net -PFALLBACK_SERVERS_URL=https://www.vpngate.net/api/iphone/ --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
