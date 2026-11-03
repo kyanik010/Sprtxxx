@@ -1,0 +1,7 @@
+{
+  "name": "MatchNight IPTV",
+  "description": "تطبيق IPTV رياضي فاخر لمشاهدة القنوات الرياضية والمباريات المباشرة مع ميزة الصوت الخارجي المنفصل",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
