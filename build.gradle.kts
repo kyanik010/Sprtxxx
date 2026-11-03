@@ -6,3 +6,7 @@ plugins {
   alias(libs.plugins.secrets) apply false
   alias(libs.plugins.google.services) apply false
 }
+
+// Required by the OpenVPN Gate core module.
+extra["basePackageName"] = "com.yahorzabotsin.openvpnclientgate"
+extra["appName"] = "SONIX TV"
