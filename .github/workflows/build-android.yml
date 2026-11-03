@@ -30,6 +30,22 @@ jobs:
           git submodule update --init vendor/OpenVPNGateClientApp
           git -C vendor/OpenVPNGateClientApp submodule update --init --recursive src/external/OpenVPNEngine
 
+      - name: Adapt VPN modules for AGP 9 built-in Kotlin
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          files = [
+              Path('vendor/OpenVPNGateClientApp/src/core/build.gradle.kts'),
+              Path('vendor/OpenVPNGateClientApp/src/external/OpenVPNEngine/main/build.gradle.kts'),
+          ]
+          for path in files:
+              source = path.read_text()
+              old = '    alias(libs.plugins.kotlin.android)\\n'
+              if old not in source:
+                  raise SystemExit(f'Expected Kotlin Android plugin declaration not found: {path}')
+              path.write_text(source.replace(old, '', 1))
+          PY
+
       - name: Install SWIG
         run: sudo apt-get update && sudo apt-get install -y swig
 
