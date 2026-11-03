@@ -1,12 +1,18 @@
 package com.example
 
+import android.app.Activity
+import android.content.Intent
 import android.content.res.Configuration
+import android.net.VpnService
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
@@ -30,6 +36,11 @@ import com.example.data.repository.IptvRepository
 import com.example.player.MatchNightPlayerEngine
 import com.example.ui.screens.*
 import com.example.ui.theme.*
+import com.yahorzabotsin.openvpnclientgate.core.servers.Server
+import com.yahorzabotsin.openvpnclientgate.core.servers.ServerRepository
+import com.yahorzabotsin.openvpnclientgate.vpn.ConnectionStateManager
+import com.yahorzabotsin.openvpnclientgate.vpn.VpnManager
+import org.koin.core.context.GlobalContext
 
 enum class AppScreen {
     HOME,
@@ -44,9 +55,20 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var repository: IptvRepository
     private lateinit var playerEngine: MatchNightPlayerEngine
+    private lateinit var vpnPermissionLauncher: ActivityResultLauncher<Intent>
+    private var pendingVpnServer: Server? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        vpnPermissionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val selectedServer = pendingVpnServer
+            pendingVpnServer = null
+            if (result.resultCode == Activity.RESULT_OK && selectedServer != null) {
+                connectVpnServer(selectedServer)
+            } else if (selectedServer != null) {
+                Toast.makeText(this, "تم إلغاء إذن اتصال VPN", Toast.LENGTH_SHORT).show()
+            }
+        }
         enableEdgeToEdge()
 
         // Keep screen on during media playback
@@ -64,6 +86,7 @@ class MainActivity : ComponentActivity() {
                 val history by repository.history.collectAsState()
                 val subscription by repository.currentSubscription.collectAsState()
                 val playingChannel by playerEngine.currentChannel.collectAsState()
+                val vpnStatus by ConnectionStateManager.state.collectAsState()
 
                 // Keep player engine channels updated for previous/next channel actions
                 LaunchedEffect(channels) {
@@ -185,6 +208,14 @@ class MainActivity : ComponentActivity() {
                         } else when (currentScreen) {
                             AppScreen.SETUP -> {
                                 SubscriptionSetupScreen(
+                                    onLoadVpnServers = { loadBestVpnServers() },
+                                    onConnectVpnServer = { requestVpnConnection(it) },
+                                    onDisconnectVpn = {
+                                        if (!VpnManager.stopVpn(this@MainActivity)) {
+                                            Toast.makeText(this@MainActivity, "تعذر إرسال طلب إيقاف VPN", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    vpnStatus = vpnStatus,
                                     onConnect = { type, server, user, pass, m3u ->
                                         val result = repository.saveSubscription(type, server, user, pass, m3u)
                                         if (result.isSuccess) currentScreen = AppScreen.HOME
@@ -254,6 +285,50 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+
+    private suspend fun loadBestVpnServers(): List<Server> {
+        val serverRepository = GlobalContext.get().get<ServerRepository>()
+        val servers = serverRepository.getServers(applicationContext, forceRefresh = true)
+        return servers.asSequence()
+            .filter { it.configData.isNotBlank() && it.ip.isNotBlank() }
+            .distinctBy { it.ip }
+            .sortedWith(
+                compareByDescending<Server> { it.score }
+                    .thenBy { if (it.ping > 0) it.ping else Int.MAX_VALUE }
+                    .thenByDescending { it.speed }
+                    .thenBy { it.numVpnSessions }
+            )
+            .take(7)
+            .toList()
+    }
+
+    private fun requestVpnConnection(server: Server) {
+        val permissionIntent = VpnService.prepare(this)
+        if (permissionIntent != null) {
+            pendingVpnServer = server
+            vpnPermissionLauncher.launch(permissionIntent)
+        } else {
+            connectVpnServer(server)
+        }
+    }
+
+    private fun connectVpnServer(server: Server) {
+        val dispatched = runCatching {
+            VpnManager.startVpn(
+                context = this,
+                base64Config = server.configData,
+                displayName = "${server.country.name} · ${server.name}",
+                ip = server.ip
+            )
+        }.getOrDefault(false)
+
+        Toast.makeText(
+            this,
+            if (dispatched) "تم إرسال طلب الاتصال بسيرفر VPN؛ جارٍ التحقق من الاتصال" else "تعذر بدء اتصال VPN",
+            Toast.LENGTH_LONG
+        ).show()
     }
 
     override fun onDestroy() {
