@@ -24,7 +24,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
 import com.example.data.model.Channel
 import com.example.data.repository.IptvRepository
 import com.example.player.MatchNightPlayerEngine
@@ -71,11 +70,6 @@ class MainActivity : ComponentActivity() {
                 }
 
                 var currentScreen by remember { mutableStateOf(if (subscription.isActive) AppScreen.HOME else AppScreen.SETUP) }
-                var showWelcome by rememberSaveable { mutableStateOf(true) }
-                LaunchedEffect(Unit) {
-                    delay(4500)
-                    showWelcome = false
-                }
                 var selectedCategoryId by rememberSaveable { mutableStateOf("") }
                 var currentChannelId by rememberSaveable { mutableStateOf<String?>(null) }
                 var categorySearchQuery by rememberSaveable { mutableStateOf("") }
@@ -113,7 +107,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     bottomBar = {
                         // Hide bottom bar when inside fullscreen video player or landscape video
-                        if (!showWelcome && currentScreen != AppScreen.PLAYER && currentScreen != AppScreen.SETUP) {
+                        if (currentScreen != AppScreen.PLAYER && currentScreen != AppScreen.SETUP) {
                             NavigationBar(
                                 containerColor = NightNavy,
                                 contentColor = SnowWhite,
@@ -180,9 +174,7 @@ class MainActivity : ComponentActivity() {
                                 else innerPadding
                             )
                     ) {
-                        if (showWelcome) {
-                            SonixWelcomeScreen(modifier = Modifier.fillMaxSize())
-                        } else when (currentScreen) {
+                        when (currentScreen) {
                             AppScreen.SETUP -> {
                                 SubscriptionSetupScreen(
                                     onConnect = { type, server, user, pass, m3u ->
