@@ -187,8 +187,8 @@ private fun SonixHeroBanner(wide: Boolean, onClick: () -> Unit, channel: Channel
         border = BorderStroke(1.dp, CalmGold.copy(alpha = .45f))
     ) {
         Box(Modifier.fillMaxSize()) {
-            Image(
-                painter = painterResource(R.drawable.img_match_night_stadium),
+            AsyncImage(
+                model = R.drawable.img_match_night_stadium,
                 contentDescription = "Sonix TV sports stadium",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
