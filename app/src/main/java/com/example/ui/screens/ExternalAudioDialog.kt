@@ -92,10 +92,15 @@ fun ExternalAudioDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Surface(
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val isLandscape = maxWidth > maxHeight
+            Surface(
             modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .fillMaxHeight(0.85f)
+                .align(Alignment.Center)
+                .fillMaxWidth(if (isLandscape) 0.78f else 0.92f)
+                .fillMaxHeight(if (isLandscape) 0.94f else 0.78f)
+                .heightIn(max = if (isLandscape) 560.dp else 680.dp)
+                .widthIn(max = if (isLandscape) 980.dp else 560.dp)
                 .testTag("external_audio_dialog"),
             shape = RoundedCornerShape(20.dp),
             color = NightNavy,
@@ -104,7 +109,7 @@ fun ExternalAudioDialog(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(20.dp)
+                    .padding(if (isLandscape) 10.dp else 12.dp)
             ) {
                 // Dialog Title & Close
                 Row(
@@ -131,13 +136,15 @@ fun ExternalAudioDialog(
                         Column {
                             Text(
                                 text = "الصوت الخارجي المنفصل",
-                                style = MaterialTheme.typography.titleLarge,
+                                style = MaterialTheme.typography.titleMedium,
                                 color = SnowWhite,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
                                 text = "شاهد الصورة من قناة واستمع لتعليق قناة ثانية",
                                 style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                                 color = CalmGold
                             )
                         }
@@ -151,7 +158,7 @@ fun ExternalAudioDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // Current Active Channels Status Card
                 Card(
@@ -160,7 +167,7 @@ fun ExternalAudioDialog(
                     border = BorderStroke(1.dp, CardBorder),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
+                    Column(modifier = Modifier.padding(10.dp)) {
                         // Video source row
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -186,9 +193,9 @@ fun ExternalAudioDialog(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
                         Divider(color = CardBorder.copy(alpha = 0.6f), thickness = 0.5.dp)
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
 
                         // Audio source row
                         Row(
@@ -266,7 +273,7 @@ fun ExternalAudioDialog(
 
                 // Audio Synchronization Section (When External Audio Active)
                 if (externalAudioState.isExternalAudioActive) {
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     Card(
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = CardBackground),
@@ -274,7 +281,7 @@ fun ExternalAudioDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
-                            modifier = Modifier.padding(14.dp),
+                            modifier = Modifier.padding(10.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Row(
@@ -296,19 +303,19 @@ fun ExternalAudioDialog(
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(10.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
 
                             // Sync Buttons Row
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 Button(
                                     onClick = { onAdjustSync(-500L) },
                                     colors = ButtonDefaults.buttonColors(containerColor = DarkSportsBlue),
                                     shape = RoundedCornerShape(8.dp),
                                     contentPadding = PaddingValues(horizontal = 8.dp),
-                                    modifier = Modifier.testTag("sync_minus_500")
+                                    modifier = Modifier.weight(1f).height(36.dp).testTag("sync_minus_500")
                                 ) {
                                     Text("-500ms", style = MaterialTheme.typography.labelSmall, color = SnowWhite)
                                 }
@@ -317,7 +324,7 @@ fun ExternalAudioDialog(
                                     colors = ButtonDefaults.buttonColors(containerColor = DarkSportsBlue),
                                     shape = RoundedCornerShape(8.dp),
                                     contentPadding = PaddingValues(horizontal = 8.dp),
-                                    modifier = Modifier.testTag("sync_minus_100")
+                                    modifier = Modifier.weight(1f).height(36.dp).testTag("sync_minus_100")
                                 ) {
                                     Text("-100ms", style = MaterialTheme.typography.labelSmall, color = SnowWhite)
                                 }
@@ -326,7 +333,7 @@ fun ExternalAudioDialog(
                                     border = BorderStroke(1.dp, CalmGold),
                                     shape = RoundedCornerShape(8.dp),
                                     contentPadding = PaddingValues(horizontal = 8.dp),
-                                    modifier = Modifier.testTag("sync_reset")
+                                    modifier = Modifier.weight(1f).height(36.dp).testTag("sync_reset")
                                 ) {
                                     Text("0.0s ضبط", style = MaterialTheme.typography.labelSmall, color = CalmGold)
                                 }
@@ -335,7 +342,7 @@ fun ExternalAudioDialog(
                                     colors = ButtonDefaults.buttonColors(containerColor = DarkSportsBlue),
                                     shape = RoundedCornerShape(8.dp),
                                     contentPadding = PaddingValues(horizontal = 8.dp),
-                                    modifier = Modifier.testTag("sync_plus_100")
+                                    modifier = Modifier.weight(1f).height(36.dp).testTag("sync_plus_100")
                                 ) {
                                     Text("+100ms", style = MaterialTheme.typography.labelSmall, color = SnowWhite)
                                 }
@@ -344,13 +351,13 @@ fun ExternalAudioDialog(
                                     colors = ButtonDefaults.buttonColors(containerColor = DarkSportsBlue),
                                     shape = RoundedCornerShape(8.dp),
                                     contentPadding = PaddingValues(horizontal = 8.dp),
-                                    modifier = Modifier.testTag("sync_plus_500")
+                                    modifier = Modifier.weight(1f).height(36.dp).testTag("sync_plus_500")
                                 ) {
                                     Text("+500ms", style = MaterialTheme.typography.labelSmall, color = SnowWhite)
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(10.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
 
                             // Revert Button
                             OutlinedButton(
@@ -359,6 +366,7 @@ fun ExternalAudioDialog(
                                 border = BorderStroke(1.dp, LiveRed),
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .height(42.dp)
                                     .testTag("revert_original_audio_btn")
                             ) {
                                 Icon(
@@ -379,7 +387,7 @@ fun ExternalAudioDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // Available Commentary Sources List
                 Text(
@@ -389,7 +397,7 @@ fun ExternalAudioDialog(
                     fontWeight = FontWeight.Bold
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
                 OutlinedTextField(
                     value = searchQuery,
@@ -407,12 +415,12 @@ fun ExternalAudioDialog(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 8.dp)
+                        .height(54.dp)
                         .testTag("audio_search_input")
                 )
 
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.weight(1f)
                 ) {
                     if (audioSources.isEmpty()) {
@@ -452,7 +460,7 @@ fun ExternalAudioDialog(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(12.dp),
+                                    .padding(horizontal = 10.dp, vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
@@ -511,6 +519,7 @@ fun ExternalAudioDialog(
                     }
                 }
             }
+        }
         }
     }
 }
