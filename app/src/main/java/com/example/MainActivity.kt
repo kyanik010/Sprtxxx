@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
@@ -66,12 +67,22 @@ class MainActivity : ComponentActivity() {
                 }
 
                 var currentScreen by remember { mutableStateOf(if (subscription.isActive) AppScreen.HOME else AppScreen.SETUP) }
+                var selectedCategoryId by rememberSaveable { mutableStateOf("") }
+                var currentChannelId by rememberSaveable { mutableStateOf<String?>(null) }
+                var channelSearchQuery by rememberSaveable { mutableStateOf("") }
+
+                LaunchedEffect(categories) {
+                    if (selectedCategoryId.isBlank() && categories.isNotEmpty()) {
+                        selectedCategoryId = categories.first().id
+                    }
+                }
                 LaunchedEffect(subscription.isActive) {
                     if (subscription.isActive && currentScreen == AppScreen.SETUP) currentScreen = AppScreen.HOME
                 }
                 var previousScreen by remember { mutableStateOf(AppScreen.HOME) }
 
                 fun openChannel(channel: Channel) {
+                    currentChannelId = channel.id
                     repository.addToHistory(channel.id)
                     playerEngine.playChannel(channel)
                     previousScreen = currentScreen
@@ -177,6 +188,11 @@ class MainActivity : ComponentActivity() {
                                     channels = channels,
                                     categories = categories,
                                     favorites = favorites,
+                                    selectedCategoryId = selectedCategoryId,
+                                    currentChannelId = currentChannelId,
+                                    searchQuery = channelSearchQuery,
+                                    onCategorySelected = { selectedCategoryId = it },
+                                    onSearchQueryChanged = { channelSearchQuery = it },
                                     onSelectChannel = { openChannel(it) },
                                     onToggleFavorite = { repository.toggleFavorite(it) }
                                 )
