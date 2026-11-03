@@ -65,6 +65,10 @@ class MatchNightPlayerEngine(private val context: Context) {
     private var retryCount = 0
     private var retryJob: Job? = null
 
+    private var externalAudioRetryJob: Job? = null
+    private var externalAudioRetryAttempt = 0
+    private var externalAudioGeneration = 0L
+
     init {
         initializePrimaryPlayer()
     }
@@ -189,20 +193,15 @@ class MatchNightPlayerEngine(private val context: Context) {
     fun attachExternalAudioSource(source: AudioCommentarySource) {
         val primary = primaryPlayer ?: return
 
-        // 1. Mute primary player audio immediately without stopping video rendering
+        externalAudioRetryJob?.cancel()
+        externalAudioRetryJob = null
+        externalAudioGeneration++
+        externalAudioRetryAttempt = 0
+        val generation = externalAudioGeneration
+
+        // Keep video running; only its audio track is muted while the external source is active.
         primary.volume = 0f
-
-        // 2. Release previous secondary audio player if present
         releaseSecondaryAudio()
-
-        // 3. Instantiate independent audio-only player
-        val audioPlayer = ExoPlayer.Builder(context).build().apply {
-            trackSelectionParameters = trackSelectionParameters.buildUpon()
-                .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true)
-                .build()
-        }
-
-        secondaryAudioPlayer = audioPlayer
 
         _externalAudioState.value = ExternalAudioState(
             isExternalAudioActive = true,
@@ -212,39 +211,126 @@ class MatchNightPlayerEngine(private val context: Context) {
             errorMessage = null
         )
 
+        startExternalAudioAttempt(source, generation)
+    }
+
+    private fun startExternalAudioAttempt(source: AudioCommentarySource, generation: Long) {
+        if (generation != externalAudioGeneration ||
+            !_externalAudioState.value.isExternalAudioActive
+        ) return
+
+        releaseSecondaryAudio()
+
+        val loadControl = DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                5000,   // retain a more useful live buffer for unstable IPTV audio
+                30000,  // maximum buffer
+                1500,   // initial playback buffer
+                5000    // rebuffer before resuming
+            )
+            .build()
+
+        val audioPlayer = ExoPlayer.Builder(context)
+            .setLoadControl(loadControl)
+            .build()
+            .apply {
+                trackSelectionParameters = trackSelectionParameters.buildUpon()
+                    .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true)
+                    .build()
+                volume = 1f
+            }
+
+        secondaryAudioPlayer = audioPlayer
+
         audioPlayer.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
+                if (generation != externalAudioGeneration ||
+                    secondaryAudioPlayer !== audioPlayer
+                ) return
+
                 when (state) {
                     Player.STATE_BUFFERING -> {
-                        _externalAudioState.value = _externalAudioState.value.copy(isBuffering = true)
+                        _externalAudioState.value = _externalAudioState.value.copy(
+                            isBuffering = true,
+                            errorMessage = null
+                        )
                     }
                     Player.STATE_READY -> {
-                        _externalAudioState.value = _externalAudioState.value.copy(isBuffering = false, errorMessage = null)
+                        externalAudioRetryJob?.cancel()
+                        externalAudioRetryJob = null
+                        externalAudioRetryAttempt = 0
+                        _externalAudioState.value = _externalAudioState.value.copy(
+                            isBuffering = false,
+                            errorMessage = null
+                        )
                         applyAudioSyncOffset()
                     }
-                    Player.STATE_ENDED, Player.STATE_IDLE -> {}
+                    Player.STATE_ENDED -> scheduleExternalAudioRetry(source, generation, null)
+                    Player.STATE_IDLE -> Unit
                 }
             }
 
             override fun onPlayerError(error: PlaybackException) {
-                // Critical Rule: If external audio drops or fails, DO NOT fail the main video!
-                _externalAudioState.value = _externalAudioState.value.copy(
-                    isBuffering = false,
-                    errorMessage = "تعذر تحميل الصوت الخارجي من قناة ${source.channelName}. الفيديو مستمر."
+                if (generation != externalAudioGeneration ||
+                    secondaryAudioPlayer !== audioPlayer
+                ) return
+
+                // Log diagnostics without exposing subscription URLs or credentials.
+                android.util.Log.w(
+                    "MatchNightExternalAudio",
+                    "External audio playback failed: ${error.errorCodeName}",
+                    error
                 )
+                scheduleExternalAudioRetry(source, generation, error)
             }
         })
 
         try {
             audioPlayer.setMediaItem(MediaItem.fromUri(source.streamUrl))
             audioPlayer.prepare()
-            audioPlayer.volume = 1f
             audioPlayer.play()
-        } catch (e: Exception) {
-            _externalAudioState.value = _externalAudioState.value.copy(
-                isBuffering = false,
-                errorMessage = "خطأ في اتصال الصوت البديل: ${e.localizedMessage}"
+        } catch (error: Exception) {
+            android.util.Log.w(
+                "MatchNightExternalAudio",
+                "Could not start external audio attempt",
+                error
             )
+            scheduleExternalAudioRetry(source, generation, null)
+        }
+    }
+
+    private fun scheduleExternalAudioRetry(
+        source: AudioCommentarySource,
+        generation: Long,
+        error: PlaybackException?
+    ) {
+        if (generation != externalAudioGeneration ||
+            !_externalAudioState.value.isExternalAudioActive
+        ) return
+
+        if (error != null) {
+            android.util.Log.w(
+                "MatchNightExternalAudio",
+                "Retrying external audio after ${error.errorCodeName}"
+            )
+        }
+
+        externalAudioRetryJob?.cancel()
+        externalAudioRetryAttempt = (externalAudioRetryAttempt + 1).coerceAtMost(6)
+        val delayMs = externalAudioRetryDelayMs(externalAudioRetryAttempt)
+
+        _externalAudioState.value = _externalAudioState.value.copy(
+            isBuffering = true,
+            errorMessage = null
+        )
+
+        externalAudioRetryJob = coroutineScope.launch {
+            delay(delayMs)
+            if (generation == externalAudioGeneration &&
+                _externalAudioState.value.isExternalAudioActive
+            ) {
+                startExternalAudioAttempt(source, generation)
+            }
         }
     }
 
@@ -293,6 +379,10 @@ class MatchNightPlayerEngine(private val context: Context) {
      * Reverts seamlessly to original channel audio
      */
     fun detachExternalAudio() {
+        externalAudioGeneration++
+        externalAudioRetryJob?.cancel()
+        externalAudioRetryJob = null
+        externalAudioRetryAttempt = 0
         releaseSecondaryAudio()
         primaryPlayer?.volume = 1f
         _externalAudioState.value = ExternalAudioState(isExternalAudioActive = false)
@@ -300,8 +390,10 @@ class MatchNightPlayerEngine(private val context: Context) {
     }
 
     private fun releaseSecondaryAudio() {
-        secondaryAudioPlayer?.stop()
-        secondaryAudioPlayer?.release()
+        secondaryAudioPlayer?.run {
+            stop()
+            release()
+        }
         secondaryAudioPlayer = null
     }
 
@@ -324,9 +416,18 @@ class MatchNightPlayerEngine(private val context: Context) {
     }
 
     fun release() {
+        externalAudioGeneration++
+        externalAudioRetryJob?.cancel()
+        externalAudioRetryJob = null
         coroutineScope.cancel()
         primaryPlayer?.release()
         primaryPlayer = null
         releaseSecondaryAudio()
     }
+}
+
+
+internal fun externalAudioRetryDelayMs(attempt: Int): Long {
+    val delays = longArrayOf(1000L, 2000L, 4000L, 8000L, 16000L, 30000L)
+    return delays[(attempt.coerceAtLeast(1) - 1).coerceAtMost(delays.lastIndex)]
 }

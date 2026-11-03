@@ -230,7 +230,7 @@ fun ExternalAudioDialog(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "جاري تحميل وتخزين مسار الصوت البديل...",
+                                    text = "جارٍ الاتصال بمصدر الصوت الخارجي...",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = CalmGold
                                 )
