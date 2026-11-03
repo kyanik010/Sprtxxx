@@ -67,13 +67,28 @@ jobs:
             -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
 
-      - name: Build and test
-        run: gradle --no-configuration-cache testDebugUnitTest assembleDebug -PPRIMARY_SERVERS_URL=https://openvpngateclient.azurewebsites.net -PFALLBACK_SERVERS_URL=https://www.vpngate.net/api/iphone/ --stacktrace
+      - name: Build APK
+        run: gradle --no-configuration-cache assembleDebug -PPRIMARY_SERVERS_URL=https://openvpngateclient.azurewebsites.net -PFALLBACK_SERVERS_URL=https://www.vpngate.net/api/iphone/ --stacktrace
 
       - name: Upload APK
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: MatchNight-debug-apk
+          name: SONIX-TV-debug-apk
           path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Run unit tests
+        run: gradle --no-configuration-cache testDebugUnitTest -PPRIMARY_SERVERS_URL=https://openvpngateclient.azurewebsites.net -PFALLBACK_SERVERS_URL=https://www.vpngate.net/api/iphone/ --stacktrace --info
+
+      - name: Upload VPN unit-test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vpncore-unit-test-reports
+          path: |
+            vendor/OpenVPNGateClientApp/src/core/build/reports/tests/testDebugUnitTest/
+            vendor/OpenVPNGateClientApp/src/core/build/test-results/testDebugUnitTest/
+          if-no-files-found: warn
           retention-days: 14
