@@ -46,7 +46,7 @@ fun ExternalAudioDialog(
     var selectedStep by remember { mutableStateOf(0) }
 
     LaunchedEffect(externalAudioState.isExternalAudioActive) {
-        if (externalAudioState.isExternalAudioActive) selectedStep = 1
+        selectedStep = if (externalAudioState.isExternalAudioActive) 1 else 0
     }
 
     // Sources are prepared and cached by the repository as subscription data is loaded.
