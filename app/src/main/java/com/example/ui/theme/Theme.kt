@@ -27,7 +27,7 @@ private val SonixColorScheme = darkColorScheme(
 )
 
 @Composable
-fun MatchNightTheme(
+fun SonixTheme(
     darkTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
