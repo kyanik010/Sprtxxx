@@ -30,6 +30,29 @@ import com.example.data.model.Channel
 import com.example.data.model.ExternalAudioState
 import com.example.ui.theme.*
 
+private fun isSupportedCommentaryChannel(channel: Channel): Boolean {
+    fun normalize(value: String): String = value
+        .lowercase()
+        .replace(Regex("[\\u064B-\\u065F\\u0670]"), "")
+        .replace('أ', 'ا')
+        .replace('إ', 'ا')
+        .replace('آ', 'ا')
+        .replace(Regex("[^a-z0-9\\u0600-\\u06FF]+"), " ")
+        .trim()
+
+    val searchable = normalize("${channel.name} ${channel.categoryId}")
+    val isBeinSports = listOf(
+        "bein sports", "bein sport", "beinsports", "beinsport",
+        "be in sports", "be in sport",
+        "بي ان سبورت", "بي ان", "بين سبورت"
+    ).any { searchable.contains(it) }
+
+    val isAlwan = Regex("""\\b(alwan|al wan)\\b""").containsMatchIn(searchable) ||
+        searchable.contains("الوان")
+
+    return isBeinSports || isAlwan
+}
+
 @Composable
 fun ExternalAudioDialog(
     currentVideoChannel: Channel,
@@ -43,14 +66,16 @@ fun ExternalAudioDialog(
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
-    // Map channels to commentary sources
-    val audioSources = remember(allChannels, searchQuery) {
+    // Only expose beIN SPORTS and Alwan channels that actually exist in the
+    // user's imported subscription. Never offer unrelated IPTV channels as audio.
+    val audioSources = remember(allChannels, searchQuery, currentVideoChannel.id) {
         allChannels
             .filter { it.id != currentVideoChannel.id }
+            .filter { isSupportedCommentaryChannel(it) }
             .filter {
-                if (searchQuery.isBlank()) true
-                else it.name.contains(searchQuery, ignoreCase = true) ||
-                     it.currentProgram.contains(searchQuery, ignoreCase = true)
+                searchQuery.isBlank() ||
+                    it.name.contains(searchQuery, ignoreCase = true) ||
+                    it.categoryId.contains(searchQuery, ignoreCase = true)
             }
             .map {
                 AudioCommentarySource(
@@ -390,6 +415,20 @@ fun ExternalAudioDialog(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.weight(1f)
                 ) {
+                    if (audioSources.isEmpty()) {
+                        item {
+                            Text(
+                                text = "لا توجد قنوات beIN SPORTS أو ألوان في اشتراكك.",
+                                color = TextMuted,
+                                style = MaterialTheme.typography.bodyMedium,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 24.dp)
+                                    .testTag("audio_sources_empty")
+                            )
+                        }
+                    }
                     items(audioSources) { source ->
                         val isSelected = externalAudioState.isExternalAudioActive &&
                                 externalAudioState.activeSource?.channelId == source.channelId
