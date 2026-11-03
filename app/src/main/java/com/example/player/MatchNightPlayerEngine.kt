@@ -78,12 +78,14 @@ class MatchNightPlayerEngine(private val context: Context) {
     }
 
     private fun initializePrimaryPlayer() {
+        // A live IPTV video needs enough headroom to absorb short network jitter,
+        // especially while the independent commentary stream is also downloading.
         val loadControl = DefaultLoadControl.Builder()
             .setBufferDurationsMs(
-                1000,  // min buffer
-                5000,  // max buffer
-                500,   // buffer for playback
-                1000   // buffer for playback after rebuffer
+                5000,   // minimum buffer
+                30000,  // maximum buffer
+                2500,   // initial playback buffer
+                5000    // resume only after a useful rebuffer
             )
             .build()
 
