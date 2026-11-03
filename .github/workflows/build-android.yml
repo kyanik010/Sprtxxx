@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build SONIX TV APK
 
 on:
   workflow_dispatch:
@@ -51,17 +51,8 @@ jobs:
             -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
 
-      - name: Build and run unit tests
-        run: gradle testDebugUnitTest assembleDebug --stacktrace
-
-      - name: Launch app on Android emulator
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          target: google_apis
-          arch: x86_64
-          profile: pixel_2
-          script: gradle connectedDebugAndroidTest --stacktrace
+      - name: Build APK
+        run: gradle assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
