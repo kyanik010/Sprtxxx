@@ -7,12 +7,12 @@ data class Channel(
     val categoryId: String,
     val streamUrl: String,
     val logoUrl: String = "",
-    val currentProgram: String = "بث مباشر - استوديو تحليلي",
-    val nextProgram: String = "المباراة القادمة مباشرة",
-    val programProgress: Float = 0.45f,
+    val currentProgram: String = "",
+    val nextProgram: String = "",
+    val programProgress: Float = 0f,
     val isFavorite: Boolean = false,
-    val resolution: String = "1080p FHD",
-    val fps: Int = 50
+    val resolution: String = "",
+    val fps: Int = 0
 )
 
 data class Category(
@@ -42,29 +42,29 @@ data class Match(
     val primaryChannelId: String,
     val primaryChannelName: String,
     val secondaryAudioChannelId: String? = null,
-    val commentator: String = "معلق المباراة"
+    val commentator: String = ""
 )
 
 enum class SubscriptionType {
     XTREAM_CODES,
     M3U_PLAYLIST,
-    PRESET_SPORTS
+    NONE
 }
 
 data class SubscriptionProfile(
     val id: String = "default",
-    val name: String = "اشتراك ماتش نايت الرياضي",
-    val type: SubscriptionType = SubscriptionType.PRESET_SPORTS,
+    val name: String = "اشتراك IPTV",
+    val type: SubscriptionType = SubscriptionType.NONE,
     val serverUrl: String = "",
     val username: String = "",
     val password: String = "",
     val m3uUrl: String = "",
-    val isActive: Boolean = true,
-    val expiryDate: String = "2027-12-31",
-    val maxConnections: Int = 2,
-    val activeConnections: Int = 1,
-    val deviceId: String = "MN-TV-8942-X",
-    val deviceModel: String = "Android TV 4K Ultra"
+    val isActive: Boolean = false,
+    val expiryDate: String = "",
+    val maxConnections: Int = 0,
+    val activeConnections: Int = 0,
+    val deviceId: String = "",
+    val deviceModel: String = ""
 )
 
 data class AudioCommentarySource(
