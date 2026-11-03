@@ -8,6 +8,32 @@ CORE_BUILD = Path(
     "vendor/OpenVPNGateClientApp/src/core/build.gradle.kts"
 )
 
+TEST_ROOT = Path("vendor/OpenVPNGateClientApp/src/core/src/test/java/com/yahorzabotsin/openvpnclientgate/core")
+
+TEST_CONFIGS = (
+    (
+        TEST_ROOT / "ui/CountryListAdapterTest.kt",
+        '    packageName = "com.yahorzabotsin.openvpnclientgate.core"\n',
+    ),
+    (
+        TEST_ROOT / "ui/ServerPickerAdapterCityUtcTest.kt",
+        '    packageName = "com.yahorzabotsin.openvpnclientgate.core"\n',
+    ),
+    (
+        TEST_ROOT / "ui/ServerPickerAdapterTest.kt",
+        '    packageName = "com.yahorzabotsin.openvpnclientgate.core"\n',
+    ),
+    (
+        TEST_ROOT / "ui/common/components/ConnectionControlsPresenterTest.kt",
+        ', packageName = "com.yahorzabotsin.openvpnclientgate.core"',
+    ),
+    (
+        TEST_ROOT / "ui/common/components/SpeedometerViewTest.kt",
+        '    packageName = "com.yahorzabotsin.openvpnclientgate.core"\n',
+    ),
+)
+
+
 def replace_once(source: str, old: str, new: str, label: str) -> str:
     count = source.count(old)
     if count != 1:
@@ -45,26 +71,26 @@ text = replace_once(
 
 text = replace_once(
     text,
-    '''            java.srcDirs(
+    """            java.srcDirs(
                 "src/main/java",
                 "src/skeleton/java"
-            )''',
-    '''            java.directories.addAll(
+            )""",
+    """            java.directories.addAll(
                 listOf("src/main/java", "src/skeleton/java")
-            )''',
+            )""",
     "deprecated java.srcDirs declaration",
 )
 
 text = replace_once(
     text,
-    '''    kotlinOptions {
+    """    kotlinOptions {
         jvmTarget = "17"
-    }''',
-    '''    kotlin {
+    }""",
+    """    kotlin {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
-    }''',
+    }""",
     "deprecated Kotlin compiler options block",
 )
 
@@ -96,3 +122,16 @@ core_text = replace_once(
 )
 CORE_BUILD.write_text(core_text, encoding="utf-8")
 print(f"Enabled AGP 9 resource values for {CORE_BUILD}")
+
+for test_file, obsolete_config in TEST_CONFIGS:
+    if not test_file.is_file():
+        raise SystemExit(f"OpenVPN test compatibility patch stopped: missing {test_file}")
+    test_text = test_file.read_text(encoding="utf-8")
+    test_text = replace_once(
+        test_text,
+        obsolete_config,
+        "",
+        f"obsolete Robolectric packageName setting in {test_file}",
+    )
+    test_file.write_text(test_text, encoding="utf-8")
+    print(f"Removed unsupported Robolectric packageName setting from {test_file}")
