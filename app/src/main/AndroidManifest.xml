@@ -14,7 +14,7 @@
         android:required="false" />
 
     <application
-        android:name="com.yahorzabotsin.openvpnclientgate.core.CoreApp"
+        android:name=".SonixVpnApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
