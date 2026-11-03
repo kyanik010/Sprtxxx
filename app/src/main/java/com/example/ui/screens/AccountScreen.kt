@@ -251,17 +251,7 @@ fun AccountScreen(
                                 labelColor = SnowWhite
                             )
                         )
-                        FilterChip(
-                            selected = selectedType == SubscriptionType.PRESET_SPORTS,
-                            onClick = { selectedType = SubscriptionType.PRESET_SPORTS },
-                            label = { Text("باقة ماتش نايت") },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = CalmGold,
-                                selectedLabelColor = NightNavy,
-                                containerColor = DarkSportsBlue,
-                                labelColor = SnowWhite
-                            )
-                        )
+
                     }
 
                     Spacer(modifier = Modifier.height(14.dp))
