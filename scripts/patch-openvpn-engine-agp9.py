@@ -77,6 +77,12 @@ if not CORE_BUILD.is_file():
 core_text = CORE_BUILD.read_text(encoding="utf-8")
 core_text = replace_once(
     core_text,
+    "    compileSdk = 36\n",
+    "    compileSdk = 37\n",
+    "vpncore compileSdk required by openVpnEngine",
+)
+core_text = replace_once(
+    core_text,
     """    buildFeatures {
         viewBinding = true
         buildConfig = true
