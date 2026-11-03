@@ -138,7 +138,7 @@ fun SubscriptionSetupScreen(
                     else Text("اتصال وتحميل القنوات", color = NightNavy, fontWeight = FontWeight.Bold)
                 }
                 Text(
-                    "لن تظهر قنوات أو مباريات تجريبية. سيعرض التطبيق المحتوى الذي يوفره اشتراكك فقط.",
+                    "لن تظهر قنوات تجريبية. سيعرض التطبيق القنوات التي يوفرها اشتراكك فقط.",
                     style = MaterialTheme.typography.bodySmall,
                     color = TextMuted
                 )
