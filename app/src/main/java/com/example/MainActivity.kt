@@ -163,10 +163,12 @@ class MainActivity : ComponentActivity() {
                             AppScreen.HOME -> {
                                 HomeScreen(
                                     channels = channels,
+                                    categories = categories,
                                     favorites = favorites,
                                     history = history,
                                     onSelectChannel = { openChannel(it) },
-                                    onToggleFavorite = { repository.toggleFavorite(it) }
+                                    onToggleFavorite = { repository.toggleFavorite(it) },
+                                    onOpenChannels = { currentScreen = AppScreen.CHANNELS }
                                 )
                             }
                             AppScreen.CHANNELS -> {
