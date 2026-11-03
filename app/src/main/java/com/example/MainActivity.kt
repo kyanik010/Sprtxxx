@@ -35,7 +35,8 @@ enum class AppScreen {
     MATCHES,
     CHANNELS,
     ACCOUNT,
-    PLAYER
+    PLAYER,
+    SETUP
 }
 
 class MainActivity : ComponentActivity() {
@@ -67,7 +68,10 @@ class MainActivity : ComponentActivity() {
                     playerEngine.setChannelsList(channels)
                 }
 
-                var currentScreen by remember { mutableStateOf(AppScreen.HOME) }
+                var currentScreen by remember { mutableStateOf(if (subscription.isActive) AppScreen.HOME else AppScreen.SETUP) }
+                LaunchedEffect(subscription.isActive) {
+                    if (subscription.isActive && currentScreen == AppScreen.SETUP) currentScreen = AppScreen.HOME
+                }
                 var previousScreen by remember { mutableStateOf(AppScreen.HOME) }
 
                 fun openChannel(channel: Channel) {
@@ -91,7 +95,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     bottomBar = {
                         // Hide bottom bar when inside fullscreen video player or landscape video
-                        if (currentScreen != AppScreen.PLAYER) {
+                        if (currentScreen != AppScreen.PLAYER && currentScreen != AppScreen.SETUP) {
                             NavigationBar(
                                 containerColor = DarkSportsBlue,
                                 contentColor = SnowWhite,
@@ -172,6 +176,15 @@ class MainActivity : ComponentActivity() {
                             )
                     ) {
                         when (currentScreen) {
+                            AppScreen.SETUP -> {
+                                SubscriptionSetupScreen(
+                                    onConnect = { type, server, user, pass, m3u ->
+                                        val result = repository.saveSubscription(type, server, user, pass, m3u)
+                                        if (result.isSuccess) currentScreen = AppScreen.HOME
+                                        result
+                                    }
+                                )
+                            }
                             AppScreen.HOME -> {
                                 HomeScreen(
                                     matches = matches,
