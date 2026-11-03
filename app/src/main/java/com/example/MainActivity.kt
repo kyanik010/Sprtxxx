@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
@@ -32,6 +33,7 @@ import com.example.ui.theme.*
 enum class AppScreen {
     HOME,
     CHANNELS,
+    CATEGORY_CHANNELS,
     ACCOUNT,
     PLAYER,
     SETUP
@@ -70,12 +72,17 @@ class MainActivity : ComponentActivity() {
                 var currentScreen by remember { mutableStateOf(if (subscription.isActive) AppScreen.HOME else AppScreen.SETUP) }
                 var selectedCategoryId by rememberSaveable { mutableStateOf("") }
                 var currentChannelId by rememberSaveable { mutableStateOf<String?>(null) }
+                var categorySearchQuery by rememberSaveable { mutableStateOf("") }
                 var channelSearchQuery by rememberSaveable { mutableStateOf("") }
 
                 LaunchedEffect(categories) {
-                    if (selectedCategoryId.isBlank() && categories.isNotEmpty()) {
-                        selectedCategoryId = categories.first().id
+                    if (selectedCategoryId.isNotBlank() && categories.none { it.id == selectedCategoryId }) {
+                        selectedCategoryId = ""
                     }
+                }
+                BackHandler(enabled = currentScreen == AppScreen.CATEGORY_CHANNELS) {
+                    currentScreen = AppScreen.CHANNELS
+                    channelSearchQuery = ""
                 }
                 LaunchedEffect(playingChannel?.id) {
                     playingChannel?.let { currentChannelId = it.id }
@@ -124,7 +131,7 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier.testTag("nav_tab_home")
                                 )
                                 NavigationBarItem(
-                                    selected = currentScreen == AppScreen.CHANNELS,
+                                    selected = currentScreen == AppScreen.CHANNELS || currentScreen == AppScreen.CATEGORY_CHANNELS,
                                     onClick = { currentScreen = AppScreen.CHANNELS },
                                     icon = { Icon(Icons.Default.Tv, contentDescription = "القنوات") },
                                     label = { Text("القنوات", fontWeight = FontWeight.SemiBold) },
@@ -188,15 +195,29 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                             AppScreen.CHANNELS -> {
-                                ChannelsScreen(
-                                    channels = channels,
+                                CategoryBrowserScreen(
                                     categories = categories,
+                                    searchQuery = categorySearchQuery,
+                                    onSearchQueryChanged = { categorySearchQuery = it },
+                                    onCategorySelected = {
+                                        selectedCategoryId = it
+                                        channelSearchQuery = ""
+                                        currentScreen = AppScreen.CATEGORY_CHANNELS
+                                    }
+                                )
+                            }
+                            AppScreen.CATEGORY_CHANNELS -> {
+                                CategoryChannelsScreen(
+                                    category = categories.firstOrNull { it.id == selectedCategoryId },
+                                    channels = channels,
                                     favorites = favorites,
-                                    selectedCategoryId = selectedCategoryId,
                                     currentChannelId = currentChannelId,
                                     searchQuery = channelSearchQuery,
-                                    onCategorySelected = { selectedCategoryId = it },
                                     onSearchQueryChanged = { channelSearchQuery = it },
+                                    onBack = {
+                                        currentScreen = AppScreen.CHANNELS
+                                        channelSearchQuery = ""
+                                    },
                                     onSelectChannel = { openChannel(it) },
                                     onToggleFavorite = { repository.toggleFavorite(it) }
                                 )
