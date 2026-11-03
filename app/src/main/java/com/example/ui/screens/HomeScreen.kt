@@ -77,11 +77,12 @@ fun HomeScreen(
                         Text("T V   •   PREMIUM", fontSize = 10.sp, fontWeight = FontWeight.Bold,
                             color = CalmGoldVariant, letterSpacing = 2.4.sp)
                     }
-                    Surface(shape = CircleShape, color = CardBackground,
-                        border = BorderStroke(1.dp, CalmGold.copy(alpha = .65f))) {
-                        Icon(Icons.Default.Tv, "Sonix TV", tint = CalmGold,
-                            modifier = Modifier.padding(12.dp).size(25.dp))
-                    }
+                    Image(
+                        painter = painterResource(R.drawable.ic_sonix_mark),
+                        contentDescription = "SONIX TV",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(if (wide) 62.dp else 54.dp)
+                    )
                 }
             }
             item("home_search") {
