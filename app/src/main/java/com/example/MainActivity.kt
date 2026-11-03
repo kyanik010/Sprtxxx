@@ -24,7 +24,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.data.model.Channel
-import com.example.data.model.Match
 import com.example.data.repository.IptvRepository
 import com.example.player.MatchNightPlayerEngine
 import com.example.ui.screens.*
@@ -32,7 +31,6 @@ import com.example.ui.theme.*
 
 enum class AppScreen {
     HOME,
-    MATCHES,
     CHANNELS,
     ACCOUNT,
     PLAYER,
@@ -58,7 +56,6 @@ class MainActivity : ComponentActivity() {
             MatchNightTheme {
                 val channels by repository.channels.collectAsState()
                 val categories by repository.categories.collectAsState()
-                val matches by repository.matches.collectAsState()
                 val favorites by repository.favorites.collectAsState()
                 val history by repository.history.collectAsState()
                 val subscription by repository.currentSubscription.collectAsState()
@@ -81,13 +78,6 @@ class MainActivity : ComponentActivity() {
                     currentScreen = AppScreen.PLAYER
                 }
 
-                fun openMatch(match: Match) {
-                    val ch = channels.firstOrNull { it.id == match.primaryChannelId }
-                        ?: channels.firstOrNull()
-                    if (ch != null) {
-                        openChannel(ch)
-                    }
-                }
 
                 val configuration = LocalConfiguration.current
                 val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -117,20 +107,6 @@ class MainActivity : ComponentActivity() {
                                         unselectedTextColor = TextMuted
                                     ),
                                     modifier = Modifier.testTag("nav_tab_home")
-                                )
-                                NavigationBarItem(
-                                    selected = currentScreen == AppScreen.MATCHES,
-                                    onClick = { currentScreen = AppScreen.MATCHES },
-                                    icon = { Icon(Icons.Default.SportsSoccer, contentDescription = "المباريات") },
-                                    label = { Text("المباريات", fontWeight = FontWeight.SemiBold) },
-                                    colors = NavigationBarItemDefaults.colors(
-                                        selectedIconColor = NightNavy,
-                                        selectedTextColor = CalmGold,
-                                        indicatorColor = CalmGold,
-                                        unselectedIconColor = TextMuted,
-                                        unselectedTextColor = TextMuted
-                                    ),
-                                    modifier = Modifier.testTag("nav_tab_matches")
                                 )
                                 NavigationBarItem(
                                     selected = currentScreen == AppScreen.CHANNELS,
@@ -187,19 +163,11 @@ class MainActivity : ComponentActivity() {
                             }
                             AppScreen.HOME -> {
                                 HomeScreen(
-                                    matches = matches,
                                     channels = channels,
                                     favorites = favorites,
                                     history = history,
-                                    onSelectMatch = { openMatch(it) },
                                     onSelectChannel = { openChannel(it) },
                                     onToggleFavorite = { repository.toggleFavorite(it) }
-                                )
-                            }
-                            AppScreen.MATCHES -> {
-                                MatchesScreen(
-                                    matches = matches,
-                                    onSelectMatch = { openMatch(it) }
                                 )
                             }
                             AppScreen.CHANNELS -> {
