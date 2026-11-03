@@ -7,8 +7,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -437,7 +435,9 @@ fun ExternalAudioDialog(
                         .testTag("audio_search_input")
                 )
 
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                if (filteredSources.isEmpty()) {
+                    AudioSourceEmptyState("لا توجد نتائج مطابقة لبحثك.")
+                } else Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
                     AudioSourceGroupHeader("beIN SPORTS", beinSources.size, "audio_group_bein")
                     if (beinSources.isEmpty()) AudioSourceEmptyState("لا توجد قنوات beIN SPORTS في هذا الاشتراك.")
                     beinSources.forEach { source ->
@@ -520,15 +520,15 @@ private fun AudioSourceRow(source: AudioCommentarySource, isSelected: Boolean, o
                     }
                 }
             } else {
-                Text(
-                    "تفعيل الصوت",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = SnowWhite,
-                    modifier = Modifier
-                        .background(DarkSportsBlue, RoundedCornerShape(6.dp))
-                        .clickable(onClick = onClick)
-                        .padding(horizontal = 9.dp, vertical = 6.dp)
-                )
+                Button(
+                    onClick = onClick,
+                    shape = RoundedCornerShape(6.dp),
+                    contentPadding = PaddingValues(horizontal = 9.dp, vertical = 4.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = DarkSportsBlue),
+                    modifier = Modifier.height(34.dp)
+                ) {
+                    Text("تفعيل الصوت", style = MaterialTheme.typography.labelSmall, color = SnowWhite)
+                }
             }
         }
     }
