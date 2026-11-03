@@ -55,7 +55,7 @@ class MainActivity : ComponentActivity() {
         playerEngine = MatchNightPlayerEngine(applicationContext)
 
         setContent {
-            MatchNightTheme {
+            SonixTheme {
                 val channels by repository.channels.collectAsState()
                 val categories by repository.categories.collectAsState()
                 val audioSources by repository.audioSources.collectAsState()
