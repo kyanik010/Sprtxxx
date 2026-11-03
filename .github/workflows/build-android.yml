@@ -30,6 +30,9 @@ jobs:
           git submodule update --init vendor/OpenVPNGateClientApp
           git -C vendor/OpenVPNGateClientApp submodule update --init --recursive src/external/OpenVPNEngine
 
+      - name: Patch vendored OpenVPN engine for AGP 9
+        run: python3 scripts/patch-openvpn-engine-agp9.py
+
       - name: Install SWIG
         run: sudo apt-get update && sudo apt-get install -y swig
 
@@ -64,7 +67,7 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Build and test
-        run: gradle testDebugUnitTest assembleDebug -PPRIMARY_SERVERS_URL=https://openvpngateclient.azurewebsites.net -PFALLBACK_SERVERS_URL=https://www.vpngate.net/api/iphone/ --stacktrace
+        run: gradle --no-configuration-cache testDebugUnitTest assembleDebug -PPRIMARY_SERVERS_URL=https://openvpngateclient.azurewebsites.net -PFALLBACK_SERVERS_URL=https://www.vpngate.net/api/iphone/ --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
