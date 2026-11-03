@@ -50,8 +50,12 @@ fun SubscriptionSetupScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Icon(Icons.Default.Tv, contentDescription = null, tint = CalmGold, modifier = Modifier.size(42.dp))
-                Text("مرحباً بك", style = MaterialTheme.typography.headlineMedium, color = SnowWhite, fontWeight = FontWeight.ExtraBold)
+                Surface(shape = RoundedCornerShape(18.dp), color = CalmGold.copy(alpha = 0.12f),
+                    border = BorderStroke(1.dp, CalmGold.copy(alpha = 0.55f))) {
+                    Icon(Icons.Default.Tv, contentDescription = null, tint = CalmGold,
+                        modifier = Modifier.padding(15.dp).size(38.dp))
+                }
+                Text("مرحباً بك في ماتش نايت", style = MaterialTheme.typography.headlineMedium, color = SnowWhite, fontWeight = FontWeight.ExtraBold)
                 Text(
                     "أضف اشتراك IPTV الخاص بك للبدء",
                     style = MaterialTheme.typography.bodyLarge,
@@ -134,8 +138,13 @@ fun SubscriptionSetupScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = CalmGold),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    if (busy) CircularProgressIndicator(modifier = Modifier.size(20.dp), color = NightNavy)
-                    else Text("اتصال وتحميل القنوات", color = NightNavy, fontWeight = FontWeight.Bold)
+                    if (busy) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), color = NightNavy, strokeWidth = 2.dp)
+                            Spacer(Modifier.width(10.dp))
+                            Text("جارٍ الاتصال وتحميل القنوات...", color = NightNavy, fontWeight = FontWeight.Bold)
+                        }
+                    } else Text("دخول", color = NightNavy, fontWeight = FontWeight.Bold)
                 }
                 Text(
                     "لن تظهر قنوات تجريبية. سيعرض التطبيق القنوات التي يوفرها اشتراكك فقط.",
