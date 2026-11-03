@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -58,8 +60,8 @@ fun ExternalAudioDialog(
                     source.commentatorName.contains(searchQuery, ignoreCase = true))
         }
     }
-    val beinSources = filteredSources.filter { it.category == AudioSourceCategory.BEIN_SPORTS }
-    val alwanSources = filteredSources.filter { it.category == AudioSourceCategory.ALWAN }
+    val beinSources = filteredSources.filter { it.category == AudioSourceCategory.BEIN_SPORTS }.sortedBy { it.channelName.lowercase() }
+    val alwanSources = filteredSources.filter { it.category == AudioSourceCategory.ALWAN }.sortedBy { it.channelName.lowercase() }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -71,8 +73,8 @@ fun ExternalAudioDialog(
             modifier = Modifier
                 .align(Alignment.Center)
                 .fillMaxWidth(if (isLandscape) 0.78f else 0.92f)
-                .fillMaxHeight(if (isLandscape) 0.94f else 0.78f)
-                .heightIn(max = if (isLandscape) 560.dp else 680.dp)
+                .fillMaxHeight(0.60f)
+                .heightIn(max = if (isLandscape) 560.dp else maxHeight * 0.60f)
                 .widthIn(max = if (isLandscape) 980.dp else 560.dp)
                 .testTag("external_audio_dialog"),
             shape = RoundedCornerShape(20.dp),
@@ -82,6 +84,7 @@ fun ExternalAudioDialog(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
                     .padding(if (isLandscape) 10.dp else 12.dp)
             ) {
                 // Dialog Title & Close
@@ -214,6 +217,20 @@ fun ExternalAudioDialog(
                                     color = SnowWhite,
                                     fontWeight = FontWeight.SemiBold
                                 )
+                            }
+                        }
+
+                        if (externalAudioState.isExternalAudioActive) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = onRevertToOriginalAudio,
+                                modifier = Modifier.fillMaxWidth().height(38.dp).testTag("stop_external_audio_btn"),
+                                border = BorderStroke(1.dp, LiveRed),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Icon(Icons.Default.VolumeOff, contentDescription = null, tint = LiveRed, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("إيقاف الصوت الخارجي والعودة للصوت الأصلي", color = LiveRed, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                             }
                         }
 
@@ -377,7 +394,7 @@ fun ExternalAudioDialog(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "العودة للصوت الأصلي للقناة",
+                                    text = "إيقاف الصوت الخارجي",
                                     color = LiveRed,
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold
@@ -420,27 +437,22 @@ fun ExternalAudioDialog(
                         .testTag("audio_search_input")
                 )
 
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    item { AudioSourceGroupHeader("beIN SPORTS", beinSources.size, "audio_group_bein") }
-                    if (beinSources.isEmpty()) item { AudioSourceEmptyState("لا توجد قنوات beIN SPORTS في هذا الاشتراك.") }
-                    items(beinSources, key = { it.channelId }) { source ->
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                    AudioSourceGroupHeader("beIN SPORTS", beinSources.size, "audio_group_bein")
+                    if (beinSources.isEmpty()) AudioSourceEmptyState("لا توجد قنوات beIN SPORTS في هذا الاشتراك.")
+                    beinSources.forEach { source ->
                         AudioSourceRow(
                             source = source,
-                            isSelected = externalAudioState.isExternalAudioActive &&
-                                externalAudioState.activeSource?.channelId == source.channelId,
+                            isSelected = externalAudioState.isExternalAudioActive && externalAudioState.activeSource?.channelId == source.channelId,
                             onClick = { onSelectAudioSource(source) }
                         )
                     }
-                    item { AudioSourceGroupHeader("ALWAN", alwanSources.size, "audio_group_alwan") }
-                    if (alwanSources.isEmpty()) item { AudioSourceEmptyState("لا توجد قنوات ALWAN في هذا الاشتراك.") }
-                    items(alwanSources, key = { it.channelId }) { source ->
+                    AudioSourceGroupHeader("ALWAN", alwanSources.size, "audio_group_alwan")
+                    if (alwanSources.isEmpty()) AudioSourceEmptyState("لا توجد قنوات ALWAN في هذا الاشتراك.")
+                    alwanSources.forEach { source ->
                         AudioSourceRow(
                             source = source,
-                            isSelected = externalAudioState.isExternalAudioActive &&
-                                externalAudioState.activeSource?.channelId == source.channelId,
+                            isSelected = externalAudioState.isExternalAudioActive && externalAudioState.activeSource?.channelId == source.channelId,
                             onClick = { onSelectAudioSource(source) }
                         )
                     }
@@ -484,7 +496,7 @@ private fun AudioSourceRow(source: AudioCommentarySource, isSelected: Boolean, o
         modifier = Modifier.fillMaxWidth().testTag("audio_source_${source.channelId}").clickable(onClick = onClick)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 10.dp, vertical = 7.dp),
+            modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 9.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -497,9 +509,26 @@ private fun AudioSourceRow(source: AudioCommentarySource, isSelected: Boolean, o
                 }
             }
             if (isSelected) {
-                Icon(Icons.Default.CheckCircle, contentDescription = "محدد", tint = CalmGold, modifier = Modifier.size(21.dp))
+                Surface(color = CalmGold.copy(alpha = 0.16f), shape = RoundedCornerShape(6.dp)) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = "مفعل", tint = CalmGold, modifier = Modifier.size(15.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("مفعل", color = CalmGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    }
+                }
             } else {
-                Text("تفعيل الصوت", style = MaterialTheme.typography.labelSmall, color = SnowWhite, modifier = Modifier.background(DarkSportsBlue, RoundedCornerShape(6.dp)).padding(horizontal = 9.dp, vertical = 6.dp))
+                Text(
+                    "تفعيل الصوت",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = SnowWhite,
+                    modifier = Modifier
+                        .background(DarkSportsBlue, RoundedCornerShape(6.dp))
+                        .clickable(onClick = onClick)
+                        .padding(horizontal = 9.dp, vertical = 6.dp)
+                )
             }
         }
     }
