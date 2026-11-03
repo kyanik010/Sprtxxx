@@ -227,6 +227,11 @@ fun SubscriptionSetupScreen(
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "تنبيه: هذه خوادم تطوعية مجانية؛ تجنب إرسال معلومات حساسة عبرها.",
+                        color = TextMuted,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                     if (vpnLoading) {
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
