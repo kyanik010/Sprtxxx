@@ -25,6 +25,8 @@ import com.example.data.model.SubscriptionType
 import com.yahorzabotsin.openvpnclientgate.core.servers.Server
 import com.yahorzabotsin.openvpnclientgate.vpn.ConnectionState
 import com.example.ui.theme.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 @Composable
@@ -48,6 +50,28 @@ fun SubscriptionSetupScreen(
     var vpnLoading by remember { mutableStateOf(false) }
     var vpnError by remember { mutableStateOf<String?>(null) }
     var vpnServers by remember { mutableStateOf<List<Server>>(emptyList()) }
+
+    suspend fun refreshVpnServerList() {
+        vpnLoading = true
+        vpnError = null
+        try {
+            vpnServers = onLoadVpnServers()
+            if (vpnServers.isEmpty()) vpnError = "لم يتم العثور على سيرفرات VPN متاحة حالياً"
+        } catch (e: Exception) {
+            vpnError = e.localizedMessage ?: "تعذر تحديث قائمة سيرفرات VPN"
+        } finally {
+            vpnLoading = false
+        }
+    }
+
+    LaunchedEffect(showVpnDialog) {
+        if (showVpnDialog) {
+            while (isActive) {
+                delay(60_000)
+                refreshVpnServerList()
+            }
+        }
+    }
 
     Box(modifier = modifier.fillMaxSize().background(NightNavy)) {
     Column(
@@ -183,16 +207,7 @@ fun SubscriptionSetupScreen(
                 showVpnDialog = true
                 vpnLoading = true
                 vpnError = null
-                scope.launch {
-                    try {
-                        vpnServers = onLoadVpnServers()
-                        if (vpnServers.isEmpty()) vpnError = "لم يتم العثور على سيرفرات VPN متاحة حالياً"
-                    } catch (e: Exception) {
-                        vpnError = e.localizedMessage ?: "تعذر تحديث قائمة سيرفرات VPN"
-                    } finally {
-                        vpnLoading = false
-                    }
-                }
+                scope.launch { refreshVpnServerList() }
             },
             modifier = Modifier.size(52.dp)
         ) {
