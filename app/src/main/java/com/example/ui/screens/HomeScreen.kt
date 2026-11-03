@@ -78,7 +78,7 @@ fun HomeScreen(
                             color = CalmGoldVariant, letterSpacing = 2.4.sp)
                     }
                     Image(
-                        painter = painterResource(R.drawable.ic_sonix_mark),
+                        painter = painterResource(R.drawable.sonix_logo),
                         contentDescription = "SONIX TV",
                         contentScale = ContentScale.Fit,
                         modifier = Modifier.size(if (wide) 62.dp else 54.dp)
