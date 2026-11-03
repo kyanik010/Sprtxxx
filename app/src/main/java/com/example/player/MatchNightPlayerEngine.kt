@@ -418,13 +418,12 @@ class MatchNightPlayerEngine(private val context: Context) {
     }
 
     fun release() {
-        externalAudioGeneration++
-        externalAudioRetryJob?.cancel()
-        externalAudioRetryJob = null
+        // Always restore the primary audio path and discard the external source
+        // before the player is torn down, so a fresh app session starts on original audio.
+        detachExternalAudio()
         coroutineScope.cancel()
         primaryPlayer?.release()
         primaryPlayer = null
-        releaseSecondaryAudio()
     }
 }
 
