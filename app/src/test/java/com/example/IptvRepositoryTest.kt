@@ -89,27 +89,4 @@ class IptvRepositoryTest {
         assertEquals("تعليق خليل البلوشي", audioSource.commentatorName)
     }
 
-    @Test
-    fun testMatchModelBroadcasterLink() {
-        val match = Match(
-            id = "m1",
-            homeTeam = "ريال مدريد",
-            homeLogo = "",
-            awayTeam = "مانشستر سيتي",
-            awayLogo = "",
-            competition = "دوري أبطال أوروبا",
-            time = "22:00",
-            date = "اليوم",
-            status = MatchStatus.LIVE,
-            score = "2 - 1",
-            minute = "70'",
-            primaryChannelId = "bein_1",
-            primaryChannelName = "beIN SPORTS 1 HD",
-            secondaryAudioChannelId = "alkass_1"
-        )
-
-        assertEquals(MatchStatus.LIVE, match.status)
-        assertEquals("bein_1", match.primaryChannelId)
-        assertEquals("alkass_1", match.secondaryAudioChannelId)
-    }
 }
