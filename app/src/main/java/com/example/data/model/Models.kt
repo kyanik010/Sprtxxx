@@ -80,7 +80,7 @@ fun classifyAudioSource(name: String, categoryId: String): AudioSourceCategory? 
     val isBein = listOf("bein sports", "bein sport", "beinsports", "beinsport",
         "be in sports", "be in sport", "بي ان سبورت", "بي ان", "بين سبورت").any(searchable::contains)
     if (isBein) return AudioSourceCategory.BEIN_SPORTS
-    val isAlwan = Regex("""\\b(alwan|al wan)\\b""").containsMatchIn(searchable) || searchable.contains("الوان")
+    val isAlwan = Regex("""\b(alwan|al wan)\b""").containsMatchIn(searchable) || searchable.contains("الوان")
     if (isAlwan) return AudioSourceCategory.ALWAN
     return null
 }
