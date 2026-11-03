@@ -1,0 +1,3 @@
+[submodule "vendor/OpenVPNGateClientApp"]
+	path = vendor/OpenVPNGateClientApp
+	url = https://github.com/zabotinegor/OpenVPNGateClientApp.git
