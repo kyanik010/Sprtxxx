@@ -1,4 +1,5 @@
 name: Build Android APK
+# Keep this workflow on the feature branch so VPN engine compatibility fixes are built and verified.
 
 on:
   workflow_dispatch:
