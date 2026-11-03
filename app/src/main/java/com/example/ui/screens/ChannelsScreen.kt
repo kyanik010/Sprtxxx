@@ -125,6 +125,20 @@ fun ChannelsScreen(
                 .fillMaxWidth()
                 .padding(bottom = 14.dp)
         ) {
+            // All channels
+            item {
+                FilterChip(
+                    selected = !showOnlyFavorites && selectedCategoryId == "all",
+                    onClick = { showOnlyFavorites = false; selectedCategoryId = "all" },
+                    label = { Text("كل القنوات") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = CalmGold, selectedLabelColor = NightNavy,
+                        containerColor = DarkSportsBlue, labelColor = SnowWhite
+                    ),
+                    modifier = Modifier.testTag("filter_all_channels")
+                )
+            }
+
             // Favorites Quick Chip
             item {
                 FilterChip(
@@ -201,6 +215,18 @@ fun ChannelsScreen(
                 contentPadding = PaddingValues(bottom = 96.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
+                item(key = "channel_results_summary") {
+                    Row(modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text(if (showOnlyFavorites) "قنواتك المفضلة" else "القنوات المتاحة",
+                            color = SnowWhite, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                        Surface(color = DarkSportsBlue, shape = RoundedCornerShape(50)) {
+                            Text("${filteredChannels.size} قناة", color = CalmGold,
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
+                        }
+                    }
+                }
                 items(filteredChannels) { channel ->
                     ChannelItemCard(
                         channel = channel,
