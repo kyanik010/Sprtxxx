@@ -43,6 +43,11 @@ fun ExternalAudioDialog(
     onDismiss: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
+    var selectedStep by remember { mutableStateOf(0) }
+
+    LaunchedEffect(externalAudioState.isExternalAudioActive) {
+        if (externalAudioState.isExternalAudioActive) selectedStep = 1
+    }
 
     // Sources are prepared and cached by the repository as subscription data is loaded.
     val filteredSources = remember(audioSources, searchQuery, currentVideoChannel.id) {
@@ -239,8 +244,31 @@ fun ExternalAudioDialog(
                     }
                 }
 
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = selectedStep == 0,
+                        onClick = { selectedStep = 0 },
+                        label = { Text("1. اختيار المعلق") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = CalmGold, selectedLabelColor = NightNavy,
+                            containerColor = DarkSportsBlue, labelColor = SnowWhite
+                        )
+                    )
+                    FilterChip(
+                        selected = selectedStep == 1,
+                        onClick = { if (externalAudioState.isExternalAudioActive) selectedStep = 1 },
+                        enabled = externalAudioState.isExternalAudioActive,
+                        label = { Text("2. ضبط المزامنة") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = CalmGold, selectedLabelColor = NightNavy,
+                            containerColor = DarkSportsBlue, labelColor = SnowWhite,
+                            disabledLabelColor = TextMuted
+                        )
+                    )
+                }
+
                 // Audio Synchronization Section (When External Audio Active)
-                if (externalAudioState.isExternalAudioActive) {
+                if (externalAudioState.isExternalAudioActive && selectedStep == 1) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Card(
                         shape = RoundedCornerShape(12.dp),
@@ -327,6 +355,10 @@ fun ExternalAudioDialog(
 
                             Spacer(modifier = Modifier.height(6.dp))
 
+                            TextButton(onClick = { selectedStep = 0 }, modifier = Modifier.fillMaxWidth()) {
+                                Text("تغيير المعلق أو القناة الصوتية", color = CalmGold, fontWeight = FontWeight.Bold)
+                            }
+
                             // Revert Button
                             OutlinedButton(
                                 onClick = onRevertToOriginalAudio,
@@ -357,6 +389,7 @@ fun ExternalAudioDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                if (selectedStep == 0) {
                 // Available Commentary Sources List
                 Text(
                     text = "اختر القناة الصوتية المعلقة:",
@@ -411,6 +444,7 @@ fun ExternalAudioDialog(
                             onClick = { onSelectAudioSource(source) }
                         )
                     }
+                }
                 }
             }
         }
