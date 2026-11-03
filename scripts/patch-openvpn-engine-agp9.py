@@ -35,7 +35,7 @@ text = replace_once(
 text = replace_once(
     text,
     '            assets.srcDirs("src/main/assets", "build/ovpnassets")',
-    '            assets.directories.addAll(listOf(file("src/main/assets"), file("build/ovpnassets")))',
+    '            assets.directories.addAll(listOf("src/main/assets", "build/ovpnassets"))',
     "deprecated assets.srcDirs declaration",
 )
 
@@ -46,7 +46,7 @@ text = replace_once(
                 "src/skeleton/java"
             )''',
     '''            java.directories.addAll(
-                listOf(file("src/main/java"), file("src/skeleton/java"))
+                listOf("src/main/java", "src/skeleton/java")
             )''',
     "deprecated java.srcDirs declaration",
 )
