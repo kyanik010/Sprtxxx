@@ -86,13 +86,16 @@ private fun CategoryCard(category: Category, onClick: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            if (category.logoUrl.isNotBlank()) {
+            var logoFailed by remember(category.logoUrl) { mutableStateOf(category.logoUrl.isBlank()) }
+            if (!logoFailed) {
                 AsyncImage(
                     model = category.logoUrl,
                     contentDescription = "شعار ${category.name}",
-                    modifier = Modifier.size(62.dp).clip(RoundedCornerShape(12.dp))
+                    modifier = Modifier.size(62.dp).clip(RoundedCornerShape(12.dp)),
+                    onError = { logoFailed = true }
                 )
-            } else {
+            }
+            if (logoFailed) {
                 Surface(
                     color = DarkSportsBlue,
                     shape = RoundedCornerShape(12.dp),
