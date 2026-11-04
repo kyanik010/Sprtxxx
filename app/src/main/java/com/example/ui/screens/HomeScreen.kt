@@ -164,7 +164,7 @@ fun HomeScreen(
 
 private fun String.mapDigitsToArabic(): String = map { c ->
     if (c in '0'..'9') ('٠'.code + (c - '0')).toChar() else c
-}
+}.joinToString("")
 
 @Composable
 private fun HomeToolButton(
