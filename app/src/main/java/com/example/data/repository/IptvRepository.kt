@@ -418,10 +418,10 @@ class IptvRepository(private val context: Context) {
         }.getOrDefault(emptyList())
 
         _vodMovieCategories.value = buildVodCategories(
-            movieCategories, movies.map { it.categoryId }, movies.associate { it.categoryId to it.posterUrl }
+            movieCategories, movies.map { it.categoryId }, movies.filter { it.categoryId.isNotBlank() && it.posterUrl.isNotBlank() }.associate { it.categoryId to it.posterUrl }
         )
         _vodSeriesCategories.value = buildVodCategories(
-            seriesCategories, series.map { it.categoryId }, series.associate { it.categoryId to it.posterUrl }
+            seriesCategories, series.map { it.categoryId }, series.filter { it.categoryId.isNotBlank() && it.posterUrl.isNotBlank() }.associate { it.categoryId to it.posterUrl }
         )
     }
 
@@ -456,7 +456,7 @@ class IptvRepository(private val context: Context) {
                             info.optString("name").trim().ifBlank { id }
                         },
                         season = season, episodeNumber = episodeNo,
-                        posterUrl = info.optString("movie_image"),
+                        posterUrl = artworkUrl(info.optString("movie_image"), server),
                         streamUrl = server + "/series/" + user + "/" + pass + "/" + id + "." + ext
                     ))
                 }
