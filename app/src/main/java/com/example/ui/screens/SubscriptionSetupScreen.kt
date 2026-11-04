@@ -49,7 +49,8 @@ fun SubscriptionSetupScreen(
         // being clipped at the bottom.
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .heightIn(min = maxHeight)
                 .verticalScroll(scrollState)
                 .imePadding()
                 .padding(horizontal = if (compact) 12.dp else 24.dp, vertical = 12.dp),
