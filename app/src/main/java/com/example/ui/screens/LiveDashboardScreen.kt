@@ -217,11 +217,26 @@ fun LiveDashboardScreen(
                                         color = if (active) SonixGold else TextMuted,
                                         fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.width(29.dp)
                                     )
-                                    AsyncImage(
-                                        model = channel.logoUrl.takeIf { it.isNotBlank() },
-                                        contentDescription = null,
-                                        modifier = Modifier.size(31.dp).clip(RoundedCornerShape(6.dp)).background(LiveInput)
-                                    )
+                                    var channelLogoFailed by remember(channel.id, channel.logoUrl) {
+                                        mutableStateOf(channel.logoUrl.isBlank())
+                                    }
+                                    Box(
+                                        Modifier.size(31.dp).clip(RoundedCornerShape(6.dp)).background(LiveInput),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (!channelLogoFailed) {
+                                            AsyncImage(
+                                                model = channel.logoUrl,
+                                                contentDescription = "شعار ${channel.name}",
+                                                modifier = Modifier.fillMaxSize(),
+                                                onError = { channelLogoFailed = true }
+                                            )
+                                        }
+                                        if (channelLogoFailed) {
+                                            Text(channel.name.firstOrNull()?.toString() ?: "؟",
+                                                color = SonixGold, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        }
+                                    }
                                     Spacer(Modifier.width(8.dp))
                                     Text(
                                         channel.name, color = if (active) SnowWhite else Color(0xFFD1D6DC),
