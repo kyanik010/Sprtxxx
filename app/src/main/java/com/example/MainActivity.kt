@@ -78,7 +78,7 @@ class MainActivity : ComponentActivity() {
                     currentScreen = when (currentScreen) {
                         AppScreen.PLAYER -> previousScreen
                         AppScreen.ACCOUNT, AppScreen.CHANNELS -> AppScreen.HOME
-                        AppScreen.VOD -> if (selectedSeriesTitle.isNotBlank()) { selectedSeriesTitle = ""; seriesEpisodes = emptyList(); AppScreen.VOD } else previousScreen
+                        AppScreen.VOD -> when { selectedSeriesTitle.isNotBlank() -> { selectedSeriesTitle = ""; seriesEpisodes = emptyList(); AppScreen.VOD }; selectedVodCategoryId.isNotBlank() -> { selectedVodCategoryId = ""; AppScreen.VOD }; else -> previousScreen }
                         else -> AppScreen.HOME
                     }
                 }
@@ -142,10 +142,14 @@ class MainActivity : ComponentActivity() {
                                 selectedSeriesTitle = selectedSeriesTitle,
                                 loadingEpisodes = loadingEpisodes,
                                 onBack = {
-                                    if (selectedSeriesTitle.isNotBlank()) {
-                                        selectedSeriesTitle = ""
-                                        seriesEpisodes = emptyList()
-                                    } else currentScreen = previousScreen
+                                    when {
+                                        selectedSeriesTitle.isNotBlank() -> {
+                                            selectedSeriesTitle = ""
+                                            seriesEpisodes = emptyList()
+                                        }
+                                        selectedVodCategoryId.isNotBlank() -> selectedVodCategoryId = ""
+                                        else -> currentScreen = previousScreen
+                                    }
                                 },
                                 onSelectCategory = { selectedVodCategoryId = it },
                                 onSelectMovie = { movie ->
