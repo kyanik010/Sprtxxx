@@ -51,7 +51,7 @@ fun SubscriptionSetupScreen(
                 color = CardBackground,
                 border = BorderStroke(1.dp, CalmGold.copy(alpha = 0.55f)),
                 shadowElevation = 12.dp,
-                modifier = Modifier.fillMaxWidth().widthIn(max = if (landscapeCompact) 760.dp else 440.dp)
+                modifier = Modifier.fillMaxWidth().widthIn(max = if (landscapeCompact) 520.dp else 440.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(if (landscapeCompact) 10.dp else if (compact) 14.dp else 22.dp),
