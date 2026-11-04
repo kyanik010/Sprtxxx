@@ -50,7 +50,16 @@ class MainActivity : ComponentActivity() {
 
                 LaunchedEffect(channels) { playerEngine.setChannelsList(channels) }
 
-                var currentScreen by remember { mutableStateOf(if (subscription.isActive) AppScreen.HOME else AppScreen.SETUP) }
+                // A saved profile must reopen the app directly, even while its streams are being restored.
+                val hasSavedSubscription = when (subscription.type) {
+                    com.example.data.model.SubscriptionType.XTREAM_CODES ->
+                        subscription.serverUrl.isNotBlank() && subscription.username.isNotBlank() && subscription.password.isNotBlank()
+                    com.example.data.model.SubscriptionType.M3U_PLAYLIST -> subscription.m3uUrl.isNotBlank()
+                    com.example.data.model.SubscriptionType.NONE -> false
+                }
+                var currentScreen by remember {
+                    mutableStateOf(if (subscription.isActive || hasSavedSubscription) AppScreen.HOME else AppScreen.SETUP)
+                }
                 var selectedCategoryId by rememberSaveable { mutableStateOf("") }
                 var vodSection by rememberSaveable { mutableStateOf("أفلام") }
                 var selectedVodCategoryId by rememberSaveable { mutableStateOf("") }
