@@ -18,7 +18,8 @@ data class Channel(
 data class Category(
     val id: String,
     val name: String,
-    val channelCount: Int = 0
+    val channelCount: Int = 0,
+    val logoUrl: String = ""
 )
 
 enum class MatchStatus {
