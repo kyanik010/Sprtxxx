@@ -15,12 +15,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import com.example.data.model.Channel
+import com.example.data.model.VodEpisode
+import kotlinx.coroutines.launch
 import com.example.data.repository.IptvRepository
 import com.example.player.MatchNightPlayerEngine
 import com.example.ui.screens.*
 import com.example.ui.theme.MatchNightTheme
 
-enum class AppScreen { HOME, CHANNELS, ACCOUNT, PLAYER, PLACEHOLDER, SETUP }
+enum class AppScreen { HOME, CHANNELS, ACCOUNT, PLAYER, VOD, SETUP }
 
 class MainActivity : ComponentActivity() {
     private lateinit var repository: IptvRepository
@@ -36,6 +38,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             MatchNightTheme {
                 val channels by repository.channels.collectAsState()
+                val vodMovies by repository.vodMovies.collectAsState()
+                val vodSeries by repository.vodSeries.collectAsState()
                 val categories by repository.categories.collectAsState()
                 val audioSources by repository.audioSources.collectAsState()
                 val favorites by repository.favorites.collectAsState()
@@ -46,7 +50,11 @@ class MainActivity : ComponentActivity() {
 
                 var currentScreen by remember { mutableStateOf(if (subscription.isActive) AppScreen.HOME else AppScreen.SETUP) }
                 var selectedCategoryId by rememberSaveable { mutableStateOf("") }
-                var placeholderTitle by rememberSaveable { mutableStateOf("أفلام") }
+                var vodSection by rememberSaveable { mutableStateOf("أفلام") }
+                var selectedSeriesTitle by rememberSaveable { mutableStateOf("") }
+                var seriesEpisodes by remember { mutableStateOf<List<VodEpisode>>(emptyList()) }
+                var loadingEpisodes by remember { mutableStateOf(false) }
+                val uiScope = rememberCoroutineScope()
                 var previousScreen by remember { mutableStateOf(AppScreen.HOME) }
 
                 LaunchedEffect(playingChannel?.id) {
