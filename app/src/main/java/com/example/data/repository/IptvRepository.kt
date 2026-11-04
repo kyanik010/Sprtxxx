@@ -57,7 +57,9 @@ class IptvRepository(private val context: Context) {
             repositoryScope.launch {
                 try {
                     loadXtreamCodes(saved.serverUrl, saved.username, saved.password)
-                    _currentSubscription.value = saved.copy(isActive = true)
+                    val expiry = runCatching { fetchXtreamExpiry(saved.serverUrl, saved.username, saved.password) }.getOrDefault(saved.expiryDate)
+                    prefs.edit().putString("sub_expiry_date", expiry).apply()
+                    _currentSubscription.value = saved.copy(isActive = true, expiryDate = expiry)
                 } catch (_: Exception) {
                     _currentSubscription.value = saved.copy(isActive = false)
                     _channels.value = emptyList()
@@ -83,6 +85,7 @@ class IptvRepository(private val context: Context) {
         val user = prefs.getString("sub_user", "") ?: ""
         val pass = prefs.getString("sub_pass", "") ?: ""
         val m3u = prefs.getString("sub_m3u", "") ?: ""
+        val expiryDate = prefs.getString("sub_expiry_date", "") ?: ""
         val typeStr = prefs.getString("sub_type", SubscriptionType.NONE.name) ?: SubscriptionType.NONE.name
         val deviceId = prefs.getString("device_id", "MN-TV-${UUID.randomUUID().toString().take(6).uppercase()}")!!
 
@@ -103,7 +106,7 @@ class IptvRepository(private val context: Context) {
             type = type,
             deviceId = deviceId,
             deviceModel = "${Build.MANUFACTURER.replaceFirstChar { it.uppercase() }} ${Build.MODEL}",
-            expiryDate = "",
+            expiryDate = expiryDate,
             isActive = false
         )
     }
@@ -191,7 +194,11 @@ class IptvRepository(private val context: Context) {
                 }
                 SubscriptionType.NONE -> throw IllegalArgumentException("اختر طريقة إضافة الاشتراك")
             }
+            val expiryDate = if (type == SubscriptionType.XTREAM_CODES) {
+                runCatching { fetchXtreamExpiry(serverUrl.trim(), user.trim(), pass) }.getOrDefault("")
+            } else ""
             prefs.edit()
+                .putString("sub_expiry_date", expiryDate)
                 .putString("sub_type", type.name)
                 .putString("sub_server", serverUrl.trim())
                 .putString("sub_user", user.trim())
@@ -202,7 +209,8 @@ class IptvRepository(private val context: Context) {
                 name = "اشتراك IPTV", type = type, serverUrl = serverUrl.trim(),
                 username = user.trim(), password = pass, m3uUrl = m3uUrl.trim(),
                 isActive = true, deviceId = prefs.getString("device_id", "") ?: "",
-                deviceModel = Build.MANUFACTURER + " " + Build.MODEL
+                deviceModel = Build.MANUFACTURER + " " + Build.MODEL,
+                expiryDate = expiryDate
             )
             Result.success(loadedCount)
         } catch (e: Exception) {
@@ -288,6 +296,19 @@ class IptvRepository(private val context: Context) {
             return parsedChannels.size
         } else {
             throw Exception("لم يتم العثور على قنوات في هذا الاشتراك")
+        }
+    }
+
+    private suspend fun fetchXtreamExpiry(server: String, user: String, pass: String): String {
+        val cleanServer = if (!server.startsWith("http://") && !server.startsWith("https://")) "http://$server" else server
+        val accountUrl = "$cleanServer/player_api.php?username=$user&password=$pass"
+        val request = Request.Builder().url(accountUrl).build()
+        return httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) return@use ""
+            val payload = JSONObject(response.body?.string().orEmpty())
+            val rawExpiry = payload.optJSONObject("user_info")?.optString("exp_date").orEmpty()
+            val epochSeconds = rawExpiry.toLongOrNull()?.takeIf { it > 0L } ?: return@use ""
+            SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(epochSeconds * 1000L))
         }
     }
 
