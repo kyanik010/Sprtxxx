@@ -89,17 +89,17 @@ fun VODBrowserScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 if (isMovies) {
-                    items(movies, key = { "movie_\${it.id}" }) { movie ->
+                    items(movies, key = { "movie_${it.id}" }) { movie ->
                         VodPosterCard(movie.name, movie.posterUrl, movie.year, movie.rating) { onSelectMovie(movie) }
                     }
                 } else if (showingEpisodes) {
-                    items(episodes, key = { "episode_\${it.id}" }) { episode ->
-                        VodPosterCard(episode.name, episode.posterUrl, "الموسم \${episode.season} • الحلقة \${episode.episodeNumber}", "") {
+                    items(episodes, key = { "episode_${it.id}" }) { episode ->
+                        VodPosterCard(episode.name, episode.posterUrl, "الموسم ${episode.season} • الحلقة ${episode.episodeNumber}", "") {
                             onPlayEpisode(episode)
                         }
                     }
                 } else {
-                    items(series, key = { "series_\${it.id}" }) { item ->
+                    items(series, key = { "series_${it.id}" }) { item ->
                         VodPosterCard(item.name, item.posterUrl, item.year, item.rating) { onSelectSeries(item) }
                     }
                 }
