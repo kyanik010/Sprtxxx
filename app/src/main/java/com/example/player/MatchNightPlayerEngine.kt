@@ -412,6 +412,29 @@ class MatchNightPlayerEngine(private val context: Context) {
         }
     }
 
+    /** Stops every active media source immediately when leaving the player screen. */
+    fun stopPlayback() {
+        // Invalidate pending retry work before stopping the primary stream.
+        retryJob?.cancel()
+        retryJob = null
+        retryCount = 0
+
+        // Stop and invalidate the independent commentary stream and its retries.
+        detachExternalAudio()
+        externalAudioGeneration++
+
+        primaryPlayer?.run {
+            playWhenReady = false
+            stop()
+            clearMediaItems()
+        }
+
+        _currentChannel.value = null
+        _isPlaying.value = false
+        _isBuffering.value = false
+        _errorMessage.value = null
+    }
+
     fun retryPlayback() {
         retryCount = 0
         _currentChannel.value?.let { playChannel(it) }
