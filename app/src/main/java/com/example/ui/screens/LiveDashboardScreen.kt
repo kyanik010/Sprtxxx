@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -135,7 +136,7 @@ fun LiveDashboardScreen(
                     Text("SX", color = SonixGold, fontSize = 15.sp, fontWeight = FontWeight.Black)
                     IconRailItem(Icons.Default.Tv, "مباشر", true) {}
                     IconRailItem(Icons.Default.Movie, "أفلام", false, onOpenMovies)
-                    IconRailItem(Icons.Default.LiveTv, "مسلسلات", false, onOpenSeries)
+                    IconRailItem(Icons.Default.Home, "مسلسلات", false, onOpenSeries)
                     IconRailItem(Icons.Default.Refresh, "تحديث", false) { playerEngine.retryPlayback() }
                     Spacer(Modifier.weight(1f))
                     IconRailItem(Icons.Default.Settings, "الإعدادات", false, onOpenAccount)
