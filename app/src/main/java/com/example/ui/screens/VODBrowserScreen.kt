@@ -14,6 +14,8 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -54,6 +56,12 @@ fun VODBrowserScreen(
     val showingEpisodes = selectedSeriesTitle.isNotBlank()
     val categories = if (isMovies) movieCategories else seriesCategories
     val showingCategories = !showingEpisodes && selectedCategoryId.isBlank() && categories.isNotEmpty()
+    var categorySearch by remember(section) { mutableStateOf("") }
+    val visibleCategories = remember(categories, categorySearch) {
+        if (categorySearch.isBlank()) categories else categories.filter {
+            it.name.contains(categorySearch.trim(), ignoreCase = true)
+        }
+    }
     val visibleMovies = remember(movies, selectedCategoryId) {
         if (selectedCategoryId.isBlank()) movies else movies.filter { it.categoryId == selectedCategoryId }
     }
@@ -61,7 +69,7 @@ fun VODBrowserScreen(
         if (selectedCategoryId.isBlank()) series else series.filter { it.categoryId == selectedCategoryId }
     }
     val count = when {
-        showingCategories -> categories.size
+        showingCategories -> visibleCategories.size
         isMovies -> visibleMovies.size
         showingEpisodes -> episodes.size
         else -> visibleSeries.size
@@ -86,25 +94,51 @@ fun VODBrowserScreen(
                         selectedCategory != null -> selectedCategory.name
                         else -> section
                     },
-                    color = SnowWhite, style = MaterialTheme.typography.titleLarge,
+                    color = SnowWhite, style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     when {
-                        showingCategories -> "$count تصنيف"
+                        showingCategories -> "${visibleCategories.size} تصنيف"
                         showingEpisodes -> "$count حلقة"
                         isMovies -> "$count فيلم"
                         else -> "$count مسلسل"
                     },
-                    color = TextMuted, style = MaterialTheme.typography.labelSmall
+                    color = TextMuted, style = MaterialTheme.typography.labelMedium
                 )
             }
+        }
+        if (showingCategories) {
+            OutlinedTextField(
+                value = categorySearch,
+                onValueChange = { categorySearch = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("ابحث عن تصنيف...", color = TextMuted) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "بحث", tint = CalmGold) },
+                trailingIcon = {
+                    if (categorySearch.isNotEmpty()) IconButton(onClick = { categorySearch = "" }) {
+                        Icon(Icons.Default.Close, contentDescription = "مسح البحث", tint = TextMuted)
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(13.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = DarkSportsBlue,
+                    unfocusedContainerColor = CardBackground,
+                    focusedBorderColor = CalmGold,
+                    unfocusedBorderColor = CardBorder,
+                    focusedTextColor = SnowWhite,
+                    unfocusedTextColor = SnowWhite
+                )
+            )
+            Spacer(Modifier.height(12.dp))
         }
 
         when {
             loadingEpisodes -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = CalmGold)
             }
+            showingCategories && visibleCategories.isEmpty() -> EmptyVodCategoriesMessage()
             showingCategories -> LazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 156.dp),
                 modifier = Modifier.fillMaxSize(),
@@ -112,7 +146,7 @@ fun VODBrowserScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(categories, key = { it.id }) { category ->
+                items(visibleCategories, key = { it.id }) { category ->
                     VodCategoryCard(
                         category = category,
                         isMovies = isMovies,
@@ -184,11 +218,14 @@ private fun VodCategoryCard(
                 AsyncImage(
                     model = category.posterUrl,
                     contentDescription = "صورة ${category.name}",
-                    modifier = Modifier.size(62.dp).clip(RoundedCornerShape(12.dp)),
-                    contentScale = ContentScale.Crop
+                    modifier = Modifier.size(62.dp).clip(RoundedCornerShape(12.dp))
                 )
             } else {
-                Surface(color = DarkSportsBlue, shape = RoundedCornerShape(12.dp), modifier = Modifier.size(62.dp)) {
+                Surface(
+                    color = DarkSportsBlue,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.size(62.dp)
+                ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(if (isMovies) Icons.Default.Movie else Icons.Default.Tv, null,
                             tint = CalmGold, modifier = Modifier.size(31.dp))
@@ -196,17 +233,30 @@ private fun VodCategoryCard(
                 }
             }
             Spacer(Modifier.height(10.dp))
-            Text(category.name, color = SnowWhite, style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold, maxLines = 3, overflow = TextOverflow.Ellipsis)
+            Text(
+                category.name,
+                color = SnowWhite,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                maxLines = 3
+            )
             Spacer(Modifier.height(5.dp))
             Surface(color = CalmGold.copy(alpha = 0.13f), shape = RoundedCornerShape(20.dp)) {
                 Text(
                     if (isMovies) "${category.itemCount} فيلم" else "${category.itemCount} مسلسل",
-                    color = CalmGold, style = MaterialTheme.typography.labelMedium,
+                    color = CalmGold,
+                    style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier.padding(horizontal = 11.dp, vertical = 4.dp)
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun EmptyVodCategoriesMessage() {
+    Box(Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
+        Text("لا توجد تصنيفات مطابقة", color = TextMuted, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
