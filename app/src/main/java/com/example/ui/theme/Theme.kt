@@ -1,5 +1,6 @@
 package com.example.ui.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -7,33 +8,34 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 
-private val SonixColorScheme = darkColorScheme(
+private val MatchNightColorScheme = darkColorScheme(
     primary = CalmGold,
     onPrimary = NightNavy,
     primaryContainer = DarkSportsBlue,
     onPrimaryContainer = CalmGoldVariant,
-    secondary = CalmGoldVariant,
+    secondary = SportsGreen,
     onSecondary = NightNavy,
     tertiary = LiveRed,
     onTertiary = SnowWhite,
     background = NightNavy,
     onBackground = SnowWhite,
-    surface = CardBackground,
+    surface = DarkSportsBlue,
     onSurface = SnowWhite,
-    surfaceVariant = DarkSportsBlue,
+    surfaceVariant = CardBackground,
     onSurfaceVariant = TextMuted,
     outline = CardBorder,
-    outlineVariant = CalmGold.copy(alpha = 0.55f)
+    outlineVariant = CalmGold
 )
 
 @Composable
-fun SonixTheme(
-    darkTheme: Boolean = true,
+fun MatchNightTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
+    // Force RTL layout direction for pristine native Arabic IPTV experience
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         MaterialTheme(
-            colorScheme = SonixColorScheme,
+            colorScheme = MatchNightColorScheme,
             typography = Typography,
             content = content
         )

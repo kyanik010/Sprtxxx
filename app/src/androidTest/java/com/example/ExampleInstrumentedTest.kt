@@ -1,23 +1,22 @@
 package com.example
 
-import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
+import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 
+/**
+ * Instrumented test, which will execute on an Android device.
+ *
+ * See [testing documentation](http://d.android.com/tools/testing).
+ */
 @RunWith(AndroidJUnit4::class)
 class ExampleInstrumentedTest {
-
-    @Test
-    fun launcherActivityStartsAndRemainsVisible() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            scenario.onActivity { activity ->
-                assertFalse("MainActivity unexpectedly finished", activity.isFinishing)
-                assertNotNull("Activity window was not created", activity.window)
-                assertNotNull("Activity content view was not created", activity.window.decorView.rootView)
-            }
-        }
-    }
+  @Test
+  fun useAppContext() {
+    // Context of the app under test.
+    val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+    assertEquals(BuildConfig.APPLICATION_ID, appContext.packageName)
+  }
 }

@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
@@ -18,7 +17,6 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
@@ -33,7 +31,6 @@ import com.example.ui.theme.*
 enum class AppScreen {
     HOME,
     CHANNELS,
-    CATEGORY_CHANNELS,
     ACCOUNT,
     PLAYER,
     SETUP
@@ -55,14 +52,13 @@ class MainActivity : ComponentActivity() {
         playerEngine = MatchNightPlayerEngine(applicationContext)
 
         setContent {
-            SonixTheme {
+            MatchNightTheme {
                 val channels by repository.channels.collectAsState()
                 val categories by repository.categories.collectAsState()
                 val audioSources by repository.audioSources.collectAsState()
                 val favorites by repository.favorites.collectAsState()
                 val history by repository.history.collectAsState()
                 val subscription by repository.currentSubscription.collectAsState()
-                val playingChannel by playerEngine.currentChannel.collectAsState()
 
                 // Keep player engine channels updated for previous/next channel actions
                 LaunchedEffect(channels) {
@@ -70,30 +66,12 @@ class MainActivity : ComponentActivity() {
                 }
 
                 var currentScreen by remember { mutableStateOf(if (subscription.isActive) AppScreen.HOME else AppScreen.SETUP) }
-                var selectedCategoryId by rememberSaveable { mutableStateOf("") }
-                var currentChannelId by rememberSaveable { mutableStateOf<String?>(null) }
-                var categorySearchQuery by rememberSaveable { mutableStateOf("") }
-                var channelSearchQuery by rememberSaveable { mutableStateOf("") }
-
-                LaunchedEffect(categories) {
-                    if (selectedCategoryId.isNotBlank() && categories.none { it.id == selectedCategoryId }) {
-                        selectedCategoryId = ""
-                    }
-                }
-                BackHandler(enabled = currentScreen == AppScreen.CATEGORY_CHANNELS) {
-                    currentScreen = AppScreen.CHANNELS
-                    channelSearchQuery = ""
-                }
-                LaunchedEffect(playingChannel?.id) {
-                    playingChannel?.let { currentChannelId = it.id }
-                }
                 LaunchedEffect(subscription.isActive) {
                     if (subscription.isActive && currentScreen == AppScreen.SETUP) currentScreen = AppScreen.HOME
                 }
                 var previousScreen by remember { mutableStateOf(AppScreen.HOME) }
 
                 fun openChannel(channel: Channel) {
-                    currentChannelId = channel.id
                     repository.addToHistory(channel.id)
                     playerEngine.playChannel(channel)
                     previousScreen = currentScreen
@@ -109,19 +87,18 @@ class MainActivity : ComponentActivity() {
                         // Hide bottom bar when inside fullscreen video player or landscape video
                         if (currentScreen != AppScreen.PLAYER && currentScreen != AppScreen.SETUP) {
                             NavigationBar(
-                                containerColor = NightNavy,
+                                containerColor = DarkSportsBlue,
                                 contentColor = SnowWhite,
                                 tonalElevation = 8.dp,
                                 modifier = Modifier
                                     .windowInsetsPadding(WindowInsets.navigationBars)
-                                    .height(if (isLandscape) 62.dp else 78.dp)
                                     .testTag("main_bottom_nav")
                             ) {
                                 NavigationBarItem(
                                     selected = currentScreen == AppScreen.HOME,
                                     onClick = { currentScreen = AppScreen.HOME },
                                     icon = { Icon(Icons.Default.Home, contentDescription = "الرئيسية") },
-                                    label = if (isLandscape) null else ({ Text("الرئيسية", fontWeight = FontWeight.SemiBold) }),
+                                    label = { Text("الرئيسية", fontWeight = FontWeight.SemiBold) },
                                     colors = NavigationBarItemDefaults.colors(
                                         selectedIconColor = NightNavy,
                                         selectedTextColor = CalmGold,
@@ -132,10 +109,10 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier.testTag("nav_tab_home")
                                 )
                                 NavigationBarItem(
-                                    selected = currentScreen == AppScreen.CHANNELS || currentScreen == AppScreen.CATEGORY_CHANNELS,
+                                    selected = currentScreen == AppScreen.CHANNELS,
                                     onClick = { currentScreen = AppScreen.CHANNELS },
                                     icon = { Icon(Icons.Default.Tv, contentDescription = "القنوات") },
-                                    label = if (isLandscape) null else ({ Text("القنوات", fontWeight = FontWeight.SemiBold) }),
+                                    label = { Text("القنوات", fontWeight = FontWeight.SemiBold) },
                                     colors = NavigationBarItemDefaults.colors(
                                         selectedIconColor = NightNavy,
                                         selectedTextColor = CalmGold,
@@ -149,7 +126,7 @@ class MainActivity : ComponentActivity() {
                                     selected = currentScreen == AppScreen.ACCOUNT,
                                     onClick = { currentScreen = AppScreen.ACCOUNT },
                                     icon = { Icon(Icons.Default.AccountCircle, contentDescription = "الاشتراك") },
-                                    label = if (isLandscape) null else ({ Text("الاشتراك", fontWeight = FontWeight.SemiBold) }),
+                                    label = { Text("الاشتراك", fontWeight = FontWeight.SemiBold) },
                                     colors = NavigationBarItemDefaults.colors(
                                         selectedIconColor = NightNavy,
                                         selectedTextColor = CalmGold,
@@ -196,29 +173,10 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                             AppScreen.CHANNELS -> {
-                                CategoryBrowserScreen(
-                                    categories = categories,
-                                    searchQuery = categorySearchQuery,
-                                    onSearchQueryChanged = { categorySearchQuery = it },
-                                    onCategorySelected = {
-                                        selectedCategoryId = it
-                                        channelSearchQuery = ""
-                                        currentScreen = AppScreen.CATEGORY_CHANNELS
-                                    }
-                                )
-                            }
-                            AppScreen.CATEGORY_CHANNELS -> {
-                                CategoryChannelsScreen(
-                                    category = categories.firstOrNull { it.id == selectedCategoryId },
+                                ChannelsScreen(
                                     channels = channels,
+                                    categories = categories,
                                     favorites = favorites,
-                                    currentChannelId = currentChannelId,
-                                    searchQuery = channelSearchQuery,
-                                    onSearchQueryChanged = { channelSearchQuery = it },
-                                    onBack = {
-                                        currentScreen = AppScreen.CHANNELS
-                                        channelSearchQuery = ""
-                                    },
                                     onSelectChannel = { openChannel(it) },
                                     onToggleFavorite = { repository.toggleFavorite(it) }
                                 )
