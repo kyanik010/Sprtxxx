@@ -72,7 +72,7 @@ class MainActivity : ComponentActivity() {
                 }
 
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                    Box(Modifier.fillMaxSize().background(Color(0xFF0A0F14))) {
+                    Box(Modifier.fillMaxSize().background(Color(0xFF0A0F14)).safeDrawingPadding()) {
                         when (currentScreen) {
                             AppScreen.SETUP -> SubscriptionSetupScreen(
                                 onConnect = { type, server, user, pass, m3u ->
