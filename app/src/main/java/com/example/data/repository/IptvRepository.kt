@@ -3,6 +3,7 @@ package com.example.data.repository
 import android.content.Context
 import android.os.Build
 import com.example.data.model.*
+import android.net.Uri
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -31,6 +32,10 @@ class IptvRepository(private val context: Context) {
     private val prefs = context.getSharedPreferences("matchnight_iptv_prefs", Context.MODE_PRIVATE)
 
     private val _channels = MutableStateFlow<List<Channel>>(emptyList())
+    private val _vodMovies = MutableStateFlow<List<VodMovie>>(emptyList())
+    val vodMovies: StateFlow<List<VodMovie>> = _vodMovies.asStateFlow()
+    private val _vodSeries = MutableStateFlow<List<VodSeries>>(emptyList())
+    val vodSeries: StateFlow<List<VodSeries>> = _vodSeries.asStateFlow()
     val channels: StateFlow<List<Channel>> = _channels.asStateFlow()
 
     private val _categories = MutableStateFlow<List<Category>>(emptyList())
@@ -293,9 +298,98 @@ class IptvRepository(private val context: Context) {
                     logoUrl = metadata?.second?.takeIf { it.isNotBlank() } ?: representativeLogo
                 )
             }
+            runCatching { loadVodCatalog(cleanServer, user, pass) }
             return parsedChannels.size
         } else {
             throw Exception("لم يتم العثور على قنوات في هذا الاشتراك")
+        }
+    }
+
+
+    private suspend fun loadVodCatalog(server: String, user: String, pass: String) {
+        val encodedUser = Uri.encode(user)
+        val encodedPass = Uri.encode(pass)
+        val base = server.trimEnd('/') + "/player_api.php?username=" + encodedUser + "&password=" + encodedPass
+
+        suspend fun readArray(action: String): JSONArray {
+            val request = Request.Builder().url(base + "&action=" + action).build()
+            return httpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) throw Exception("VOD API " + action + ": HTTP " + response.code)
+                JSONArray(response.body?.string().orEmpty())
+            }
+        }
+
+        _vodMovies.value = runCatching {
+            val array = readArray("get_vod_streams")
+            buildList {
+                for (i in 0 until array.length()) {
+                    val item = array.optJSONObject(i) ?: continue
+                    val id = item.optString("stream_id").takeIf { it.isNotBlank() } ?: continue
+                    val name = item.optString("name").ifBlank { "فيلم " + id }
+                    val ext = item.optString("container_extension").ifBlank { "mp4" }
+                    add(VodMovie(
+                        id = id, name = name, categoryId = item.optString("category_id"),
+                        posterUrl = item.optString("stream_icon"), plot = item.optString("plot"),
+                        year = item.optString("year"), rating = item.optString("rating"),
+                        streamUrl = server.trimEnd('/') + "/movie/" + encodedUser + "/" + encodedPass + "/" + id + "." + ext
+                    ))
+                }
+            }
+        }.getOrDefault(emptyList())
+
+        _vodSeries.value = runCatching {
+            val array = readArray("get_series")
+            buildList {
+                for (i in 0 until array.length()) {
+                    val item = array.optJSONObject(i) ?: continue
+                    val id = item.optString("series_id").takeIf { it.isNotBlank() } ?: continue
+                    add(VodSeries(
+                        id = id, name = item.optString("name").ifBlank { "مسلسل " + id },
+                        categoryId = item.optString("category_id"),
+                        posterUrl = item.optString("cover").ifBlank { item.optString("cover_big") },
+                        plot = item.optString("plot"), year = item.optString("releaseDate").take(4),
+                        rating = item.optString("rating")
+                    ))
+                }
+            }
+        }.getOrDefault(emptyList())
+    }
+
+    suspend fun loadSeriesEpisodes(seriesId: String): List<VodEpisode> = withContext(Dispatchers.IO) {
+        val profile = _currentSubscription.value
+        require(profile.type == SubscriptionType.XTREAM_CODES) { "الحلقات تتطلب اشتراك Xtream Codes" }
+        val server = profile.serverUrl.let {
+            if (it.startsWith("http://") || it.startsWith("https://")) it else "http://" + it
+        }.trimEnd('/')
+        val user = Uri.encode(profile.username)
+        val pass = Uri.encode(profile.password)
+        val url = server + "/player_api.php?username=" + user + "&password=" + pass +
+            "&action=get_series_info&series_id=" + Uri.encode(seriesId)
+        val request = Request.Builder().url(url).build()
+        httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) throw Exception("تعذر تحميل حلقات المسلسل: HTTP " + response.code)
+            val root = JSONObject(response.body?.string().orEmpty())
+            val seasons = root.optJSONObject("episodes") ?: JSONObject()
+            val result = mutableListOf<VodEpisode>()
+            val keys = seasons.keys().asSequence().toList().sortedBy { it.toIntOrNull() ?: Int.MAX_VALUE }
+            keys.forEach { seasonKey ->
+                val season = seasonKey.toIntOrNull() ?: 0
+                val list = seasons.optJSONArray(seasonKey) ?: return@forEach
+                for (i in 0 until list.length()) {
+                    val item = list.optJSONObject(i) ?: continue
+                    val id = item.optString("id").takeIf { it.isNotBlank() } ?: continue
+                    val ext = item.optString("container_extension").ifBlank { "mp4" }
+                    val info = item.optJSONObject("info") ?: JSONObject()
+                    val episodeNo = item.optInt("episode_num", i + 1)
+                    result.add(VodEpisode(
+                        id = id, name = item.optString("title").ifBlank { "الحلقة " + episodeNo },
+                        season = season, episodeNumber = episodeNo,
+                        posterUrl = info.optString("movie_image"),
+                        streamUrl = server + "/series/" + user + "/" + pass + "/" + id + "." + ext
+                    ))
+                }
+            }
+            result.sortedWith(compareBy<VodEpisode> { it.season }.thenBy { it.episodeNumber })
         }
     }
 
