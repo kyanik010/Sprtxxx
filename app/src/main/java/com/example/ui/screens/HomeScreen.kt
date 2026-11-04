@@ -76,7 +76,7 @@ fun HomeScreen(
     BoxWithConstraints(
         modifier = modifier.fillMaxSize().background(
             Brush.linearGradient(listOf(HomeBackground, Color(0xFF17212B)))
-        ).padding(horizontal = 26.dp, vertical = 18.dp)
+        ).padding(horizontal = 20.dp, vertical = 12.dp)
     ) {
         CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr) {
             Row(
@@ -100,7 +100,7 @@ fun HomeScreen(
         }
 
         Surface(
-            modifier = Modifier.align(Alignment.Center).fillMaxWidth(0.82f).fillMaxHeight(0.54f),
+            modifier = Modifier.align(Alignment.Center).fillMaxWidth(0.86f).fillMaxHeight(0.62f),
             color = Color(0xB5111820),
             shape = RoundedCornerShape(24.dp),
             border = BorderStroke(1.dp, Color.White.copy(alpha = 0.10f)),
@@ -108,7 +108,7 @@ fun HomeScreen(
         ) {
             CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr) {
                 Row(
-                    modifier = Modifier.fillMaxSize().padding(18.dp),
+                    modifier = Modifier.fillMaxSize().padding(12.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -134,9 +134,9 @@ fun HomeScreen(
                 ) {
                     HomeSubscriptionValue("اسم المستخدم", subscription.username.ifBlank { subscription.name })
                     HomeInfoDivider()
-                    HomeSubscriptionValue("رقم المشترك", subscription.deviceId.ifBlank { subscription.username.ifBlank { "—" } })
+                    HomeSubscriptionValue("كلمة المرور", subscription.password.ifBlank { "—" })
                     HomeInfoDivider()
-                    HomeSubscriptionValue("انتهاء الصلاحية", subscription.expiryDate.ifBlank { "—" }.mapDigitsToArabic())
+                    HomeSubscriptionValue("انتهاء الصلاحية", subscription.expiryDate.ifBlank { "غير متاح" }.mapDigitsToArabic())
                 }
             }
         }
@@ -243,17 +243,18 @@ private fun HomeSectionCard(
             verticalArrangement = Arrangement.Center
         ) {
             Surface(
-                modifier = Modifier.size(92.dp),
+                modifier = Modifier.size(68.dp),
                 color = accent.copy(alpha = 0.12f),
                 shape = RoundedCornerShape(22.dp),
                 border = BorderStroke(1.dp, accent.copy(alpha = 0.48f))
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(52.dp))
+                    Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(40.dp))
                 }
             }
-            Spacer(Modifier.height(15.dp))
-            Text(title, color = SnowWhite, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(8.dp))
+            Text(title, color = SnowWhite, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center,
+            maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
         }
     }
 }
