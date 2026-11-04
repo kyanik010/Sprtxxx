@@ -41,9 +41,9 @@ fun AccountScreen(
         modifier = modifier
             .fillMaxSize()
             .background(NightNavy)
-            .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 12.dp),
+        contentPadding = PaddingValues(top = 10.dp, bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Top Title
         item {
@@ -55,12 +55,12 @@ fun AccountScreen(
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = null,
                     tint = CalmGold,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(22.dp)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
                     text = "إدارة الاشتراك والجهاز",
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     color = SnowWhite,
                     fontWeight = FontWeight.Bold
                 )
@@ -77,7 +77,7 @@ fun AccountScreen(
                     .fillMaxWidth()
                     .testTag("subscription_status_card")
             ) {
-                Column(modifier = Modifier.padding(18.dp)) {
+                Column(modifier = Modifier.padding(11.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -123,9 +123,9 @@ fun AccountScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     Divider(color = CardBorder, thickness = 0.5.dp)
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
                         "القنوات المعروضة مأخوذة من قائمة الاشتراك المحمّلة.",
@@ -144,7 +144,7 @@ fun AccountScreen(
                 border = BorderStroke(1.dp, CardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(10.dp)) {
                     Text(
                         text = "معلومات الجهاز",
                         style = MaterialTheme.typography.titleMedium,
@@ -189,7 +189,7 @@ fun AccountScreen(
                 border = BorderStroke(1.dp, CalmGold),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
+                    .height(42.dp)
                     .testTag("edit_subscription_btn")
             ) {
                 Icon(Icons.Default.SettingsInputAntenna, contentDescription = null, tint = CalmGold)
