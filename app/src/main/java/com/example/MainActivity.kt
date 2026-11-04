@@ -74,9 +74,14 @@ class MainActivity : ComponentActivity() {
                     currentScreen = AppScreen.PLAYER
                 }
 
+                fun closePlayer() {
+                    playerEngine.stopPlayback()
+                    currentScreen = previousScreen
+                }
+
                 BackHandler(enabled = currentScreen != AppScreen.HOME && currentScreen != AppScreen.SETUP) {
                     currentScreen = when (currentScreen) {
-                        AppScreen.PLAYER -> previousScreen
+                        AppScreen.PLAYER -> { playerEngine.stopPlayback(); previousScreen }
                         AppScreen.ACCOUNT, AppScreen.CHANNELS -> AppScreen.HOME
                         AppScreen.VOD -> when { selectedSeriesTitle.isNotBlank() -> { selectedSeriesTitle = ""; seriesEpisodes = emptyList(); AppScreen.VOD }; selectedVodCategoryId.isNotBlank() -> { selectedVodCategoryId = ""; AppScreen.VOD }; else -> previousScreen }
                         else -> AppScreen.HOME
@@ -185,7 +190,7 @@ class MainActivity : ComponentActivity() {
                             AppScreen.PLAYER -> PlayerScreen(
                                 playerEngine = playerEngine,
                                 audioSources = audioSources,
-                                onBack = { currentScreen = previousScreen },
+                                onBack = { closePlayer() },
                                 onToggleFavorite = { repository.toggleFavorite(it) }
                             )
                         }
