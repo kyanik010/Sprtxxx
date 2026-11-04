@@ -31,6 +31,20 @@ class IptvRepository(private val context: Context) {
 
     private val prefs = context.getSharedPreferences("matchnight_iptv_prefs", Context.MODE_PRIVATE)
 
+    /** Resolve provider artwork returned as absolute, protocol-relative, or server-relative URLs. */
+    private fun artworkUrl(raw: String?, server: String = ""): String {
+        val value = raw.orEmpty().trim().replace("&amp;", "&").trim('"', '\'')
+        if (value.isBlank() || value.equals("null", true) || value == "0") return ""
+        val resolved = when {
+            value.startsWith("https://", true) || value.startsWith("http://", true) -> value
+            value.startsWith("//") -> (if (server.startsWith("https://", true)) "https:" else "http:") + value
+            server.isNotBlank() && value.startsWith("/") -> server.trimEnd('/') + value
+            server.isNotBlank() -> server.trimEnd('/') + "/" + value
+            else -> value
+        }
+        return resolved.replace(" ", "%20")
+    }
+
     private val _channels = MutableStateFlow<List<Channel>>(emptyList())
     private val _vodMovies = MutableStateFlow<List<VodMovie>>(emptyList())
     val vodMovies: StateFlow<List<VodMovie>> = _vodMovies.asStateFlow()
@@ -256,7 +270,7 @@ class IptvRepository(private val context: Context) {
             obj.optString("category_name").trim().takeIf { it.isNotBlank() }?.let {
                 categoryNamesFromStreams.putIfAbsent(category, it)
             }
-            val logo = obj.optString("stream_icon", "")
+            val logo = artworkUrl(obj.optString("stream_icon", ""), cleanServer)
             val num = obj.optInt("num", i + 1)
             val streamUrl = "$cleanServer/live/$user/$pass/$streamId.m3u8"
 
@@ -293,8 +307,13 @@ class IptvRepository(private val context: Context) {
                                 if (id.isNotBlank()) {
                                     val name = item.optString("category_name").trim().takeIf { it.isNotBlank() }
                                         ?: categoryNamesFromStreams[id] ?: id
-                                    val logo = item.optString("category_icon",
-                                        item.optString("category_logo", item.optString("cover", "")))
+                                    val logo = artworkUrl(
+                                        item.optString("category_icon")
+                                            .ifBlank { item.optString("category_logo") }
+                                            .ifBlank { item.optString("cover") }
+                                            .ifBlank { item.optString("cover_big") },
+                                        cleanServer
+                                    )
                                     put(id, name to logo)
                                 }
                             }
@@ -346,7 +365,7 @@ class IptvRepository(private val context: Context) {
                     val ext = item.optString("container_extension").ifBlank { "mp4" }
                     add(VodMovie(
                         id = id, name = name, categoryId = item.optString("category_id"),
-                        posterUrl = item.optString("stream_icon"), plot = item.optString("plot"),
+                        posterUrl = artworkUrl(item.optString("stream_icon"), server), plot = item.optString("plot"),
                         year = item.optString("year"), rating = item.optString("rating"),
                         streamUrl = server.trimEnd('/') + "/movie/" + encodedUser + "/" + encodedPass + "/" + id + "." + ext
                     ))
@@ -366,7 +385,7 @@ class IptvRepository(private val context: Context) {
                             item.optString("o_name").trim().ifBlank { id }
                         },
                         categoryId = item.optString("category_id"),
-                        posterUrl = item.optString("cover").ifBlank { item.optString("cover_big") },
+                        posterUrl = artworkUrl(item.optString("cover").ifBlank { item.optString("cover_big") }, server),
                         plot = item.optString("plot"), year = item.optString("releaseDate").take(4),
                         rating = item.optString("rating")
                     ))
@@ -380,10 +399,13 @@ class IptvRepository(private val context: Context) {
                 val item = array.optJSONObject(i) ?: continue
                 val id = item.optString("category_id").takeIf { it.isNotBlank() } ?: continue
                 val name = item.optString("category_name").ifBlank { id }
-                val poster = item.optString("category_icon")
-                    .ifBlank { item.optString("category_logo") }
-                    .ifBlank { item.optString("cover") }
-                    .ifBlank { item.optString("cover_big") }
+                val poster = artworkUrl(
+                    item.optString("category_icon")
+                        .ifBlank { item.optString("category_logo") }
+                        .ifBlank { item.optString("cover") }
+                        .ifBlank { item.optString("cover_big") },
+                    server
+                )
                 add(VodCategory(id = id, name = name, posterUrl = poster))
             }
         }
@@ -395,8 +417,12 @@ class IptvRepository(private val context: Context) {
             parseCategories(readArray("get_series_categories"))
         }.getOrDefault(emptyList())
 
-        _vodMovieCategories.value = buildVodCategories(movieCategories, movies.map { it.categoryId })
-        _vodSeriesCategories.value = buildVodCategories(seriesCategories, series.map { it.categoryId })
+        _vodMovieCategories.value = buildVodCategories(
+            movieCategories, movies.map { it.categoryId }, movies.associate { it.categoryId to it.posterUrl }
+        )
+        _vodSeriesCategories.value = buildVodCategories(
+            seriesCategories, series.map { it.categoryId }, series.associate { it.categoryId to it.posterUrl }
+        )
     }
 
     suspend fun loadSeriesEpisodes(seriesId: String): List<VodEpisode> = withContext(Dispatchers.IO) {
