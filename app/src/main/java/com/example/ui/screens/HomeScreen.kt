@@ -1,371 +1,223 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material.icons.filled.PowerSettingsNew
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import com.example.data.model.Category
 import com.example.data.model.Channel
-import com.example.ui.components.ChannelItemCard
-import com.example.ui.components.SectionHeader
+import com.example.data.model.SubscriptionProfile
 import com.example.ui.theme.*
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import kotlinx.coroutines.delay
 
 @Composable
 fun HomeScreen(
     channels: List<Channel>,
-    categories: List<Category>,
-    favorites: Set<String>,
-    history: List<String>,
-    onSelectChannel: (Channel) -> Unit,
-    onToggleFavorite: (String) -> Unit,
+    subscription: SubscriptionProfile,
     onOpenChannels: () -> Unit,
+    onOpenAccount: () -> Unit,
+    onExit: () -> Unit,
+    onRefresh: () -> Unit,
+    onSelectChannel: (Channel) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var searchOpen by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
-    val channelsById = remember(channels) { channels.associateBy { it.id } }
-    val favoriteChannels = remember(channels, favorites) {
-        channels.filter { favorites.contains(it.id) }
-    }
-    val historyChannels = remember(channels, history) {
-        history.mapNotNull { channelsById[it] }
+    var clock by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        while (true) {
+            clock = SimpleDateFormat("hh:mm a", Locale("ar")).format(Date())
+                .replace("AM", "ص").replace("PM", "م")
+                .mapDigitsToArabic()
+            delay(30_000)
+        }
     }
     val searchResults = remember(channels, searchQuery) {
         if (searchQuery.isBlank()) emptyList()
-        else channels.filter { it.name.contains(searchQuery.trim(), ignoreCase = true) }.take(12)
+        else channels.filter { it.name.contains(searchQuery.trim(), ignoreCase = true) }.take(8)
     }
-    val lastWatched = historyChannels.firstOrNull()
-    val featuredChannel = channels.firstOrNull { it.id != lastWatched?.id } ?: lastWatched
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .background(NightNavy)
-            .padding(horizontal = 18.dp),
-        contentPadding = PaddingValues(top = 20.dp, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+    BoxWithConstraints(
+        modifier = modifier.fillMaxSize().background(
+            Brush.linearGradient(listOf(Color(0xFF0B1118), Color(0xFF1A2430)))
+        ).padding(horizontal = 22.dp, vertical = 14.dp)
     ) {
-        item(key = "header") {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(
-                        text = "ماتش نايت",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = SnowWhite,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                    Text(
-                        text = "تجربتك لمشاهدة قنواتك",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = CalmGold
-                    )
-                }
-                Surface(
-                    color = DarkSportsBlue,
-                    shape = RoundedCornerShape(12.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, CalmGold.copy(alpha = 0.45f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Icon(Icons.Default.Tv, contentDescription = null, tint = CalmGold, modifier = Modifier.size(17.dp))
-                        Text("IPTV", color = SnowWhite, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
-                    }
-                }
-            }
-        }
-
-        item(key = "search") {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                modifier = Modifier.fillMaxWidth().testTag("home_channel_search"),
-                singleLine = true,
-                placeholder = { Text("ابحث عن قناة في اشتراكك", color = TextMuted) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "بحث", tint = CalmGold) },
-                trailingIcon = {
-                    if (searchQuery.isNotBlank()) {
-                        TextButton(onClick = { searchQuery = "" }) { Text("مسح", color = CalmGold) }
-                    }
-                },
-                shape = RoundedCornerShape(15.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = SnowWhite,
-                    unfocusedTextColor = SnowWhite,
-                    focusedBorderColor = CalmGold,
-                    unfocusedBorderColor = CardBorder,
-                    cursorColor = CalmGold,
-                    focusedContainerColor = CardBackground,
-                    unfocusedContainerColor = CardBackground
-                )
-            )
-            Spacer(Modifier.height(12.dp))
-        }
-
-        if (searchQuery.isNotBlank()) {
-            item(key = "search_heading") {
-                SectionHeader(title = "نتائج البحث", badgeText = "${searchResults.size}")
-            }
-            if (searchResults.isEmpty()) {
-                item(key = "search_empty") { HomeEmptyMessage("لا توجد قناة بهذا الاسم") }
-            } else {
-                items(searchResults, key = { "search_${it.id}" }) { channel ->
-                    ChannelItemCard(
-                        channel = channel,
-                        onClick = { onSelectChannel(channel) },
-                        onToggleFavorite = { onToggleFavorite(channel.id) },
-                        modifier = Modifier.padding(vertical = 3.dp)
-                    )
-                }
-            }
-        } else {
-            if (featuredChannel != null) {
-                item(key = "live_hero") {
-                    LiveHeroCard(channel = featuredChannel, onClick = { onSelectChannel(featuredChannel) })
-                }
-            }
-
-            if (lastWatched != null) {
-                item(key = "continue_watching") {
-                    SectionHeader(title = "متابعة المشاهدة")
-                    ContinueWatchingCard(channel = lastWatched, onClick = { onSelectChannel(lastWatched) })
-                }
-            }
-
-            if (categories.isNotEmpty()) {
-                item(key = "categories_header") {
-                    SectionHeader(title = "تصنيفات اشتراكك", badgeText = "${categories.size}")
-                }
-                item(key = "categories") {
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        items(categories, key = { it.id }) { category ->
-                            CategoryHomeCard(category = category, onClick = onOpenChannels)
-                        }
-                    }
-                }
-            }
-
-            if (favoriteChannels.isNotEmpty()) {
-                item(key = "favorites_header") {
-                    SectionHeader(title = "قنواتك المفضلة", badgeText = "${favoriteChannels.size}")
-                }
-                item(key = "favorites") {
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        items(favoriteChannels, key = { it.id }) { channel ->
-                            QuickChannelCard(channel = channel, onClick = { onSelectChannel(channel) })
-                        }
-                    }
-                }
-            }
-
-            if (historyChannels.isNotEmpty()) {
-                item(key = "history_header") {
-                    SectionHeader(title = "آخر المشاهدات", badgeText = "${historyChannels.size}")
-                }
-                items(historyChannels.take(8), key = { "history_${it.id}" }) { channel ->
-                    ChannelItemCard(
-                        channel = channel,
-                        onClick = { onSelectChannel(channel) },
-                        onToggleFavorite = { onToggleFavorite(channel.id) },
-                        modifier = Modifier.padding(vertical = 3.dp)
-                    )
-                }
-            }
-
-            if (channels.isEmpty()) {
-                item(key = "empty_subscription") {
-                    HomeEmptyMessage("أضف اشتراك IPTV لعرض قنواتك وتصنيفاتك هنا")
-                }
-            } else if (favoriteChannels.isEmpty() && historyChannels.isEmpty() && categories.isEmpty()) {
-                item(key = "getting_started") {
-                    HomeEmptyMessage("ابدأ باختيار قناة من صفحة القنوات، وستظهر مشاهداتك ومفضلاتك هنا")
-                }
-            }
-
-            item(key = "all_channels_action") {
-                Spacer(Modifier.height(8.dp))
-                OutlinedButton(
-                    onClick = onOpenChannels,
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, CalmGold.copy(alpha = 0.7f)),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = CalmGold)
-                ) {
-                    Icon(Icons.Default.GridView, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("استعراض جميع القنوات", fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ContinueWatchingCard(channel: Channel, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().testTag("home_continue_watching").clickable(onClick = onClick),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
-        border = androidx.compose.foundation.BorderStroke(1.dp, CalmGold.copy(alpha = 0.55f))
-    ) {
+        // تم التعديل: تخطيط الشاشة الرئيسية الأفقي وشريط الأدوات العلوي.
         Row(
-            modifier = Modifier.fillMaxWidth().background(
-                androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(DarkSportsBlue, CardBackground))
-            ).padding(16.dp),
+            modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AsyncImage(
-                model = channel.logoUrl.takeIf { it.isNotBlank() },
-                contentDescription = channel.name,
-                modifier = Modifier.size(62.dp).clip(RoundedCornerShape(12.dp)).background(DarkSportsBlue),
-                contentScale = androidx.compose.ui.layout.ContentScale.Fit
-            )
-            Spacer(Modifier.width(13.dp))
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("آخر قناة شاهدتها", color = CalmGold, style = MaterialTheme.typography.labelSmall)
-                Text(channel.name, color = SnowWhite, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(channel.categoryId, color = TextMuted, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+            Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                HomeToolButton("إغلاق", Icons.Default.PowerSettingsNew, Color(0xFFB85D45), onExit)
+                HomeToolButton("تحديث", Icons.Default.Refresh, SnowWhite, onRefresh)
+                HomeToolButton("الملف الشخصي", Icons.Default.Person, SnowWhite, onOpenAccount)
+                HomeToolButton("الإعدادات", Icons.Default.Settings, SnowWhite, onOpenAccount)
+                HomeToolButton("بحث", Icons.Default.Search, SnowWhite) { searchOpen = !searchOpen }
             }
-            Surface(shape = CircleShape, color = CalmGold) {
-                Icon(Icons.Default.PlayArrow, contentDescription = "متابعة المشاهدة", tint = NightNavy, modifier = Modifier.padding(9.dp).size(22.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun CategoryHomeCard(category: Category, onClick: () -> Unit) {
-    Surface(
-        modifier = Modifier.width(148.dp).height(94.dp).clickable(onClick = onClick).testTag("home_category_${category.id}"),
-        shape = RoundedCornerShape(14.dp),
-        color = CardBackground,
-        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(12.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Icon(Icons.Default.GridView, contentDescription = null, tint = CalmGold, modifier = Modifier.size(20.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(category.name, color = SnowWhite, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("${category.channelCount} قناة", color = TextMuted, style = MaterialTheme.typography.labelSmall)
+            Text(clock, color = SnowWhite, fontSize = 27.sp, fontWeight = FontWeight.SemiBold)
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("IPTV", color = Color(0xFFD6DEE8), fontSize = 27.sp, fontWeight = FontWeight.ExtraBold)
+                    Text("LIVE", color = Color(0xFF8FB8E8), fontSize = 27.sp, fontWeight = FontWeight.ExtraBold)
+                }
+                Text("S T R E M", color = TextMuted, fontSize = 9.sp, letterSpacing = 4.sp)
             }
         }
-    }
-}
 
-@Composable
-private fun HomeEmptyMessage(message: String) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
-        color = CardBackground,
-        shape = RoundedCornerShape(14.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
-    ) {
-        Text(message, color = TextMuted, textAlign = TextAlign.Center, modifier = Modifier.padding(20.dp))
-    }
-}
-
-@Composable
-fun QuickChannelCard(channel: Channel, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Card(
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
-        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
-        modifier = modifier.width(140.dp).testTag("quick_channel_${channel.id}").clickable(onClick = onClick)
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        // تم التعديل: لوحة زجاجية مركزية بثلاث بطاقات متساوية.
+        Surface(
+            modifier = Modifier.align(Alignment.Center).fillMaxWidth(0.80f).fillMaxHeight(0.58f),
+            color = Color(0xB51C2A38),
+            shape = RoundedCornerShape(28.dp),
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)),
+            shadowElevation = 16.dp
         ) {
-            AsyncImage(
-                model = channel.logoUrl.takeIf { it.isNotBlank() },
-                contentDescription = channel.name,
-                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(10.dp)).background(DarkSportsBlue),
-                contentScale = androidx.compose.ui.layout.ContentScale.Fit
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(channel.name, style = MaterialTheme.typography.labelMedium, color = SnowWhite, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (channel.resolution.isNotBlank()) {
-                Spacer(Modifier.height(5.dp))
-                Text(channel.resolution, color = CalmGold, style = MaterialTheme.typography.labelSmall, fontSize = 10.sp)
+            CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr) {
+                Row(
+                    modifier = Modifier.fillMaxSize().padding(20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(18.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HomeSectionCard("أفلام", Icons.Default.Movie, Color(0xFFB87333), onClick = onOpenChannels, modifier = Modifier.weight(1f))
+                    HomeSectionCard("مسلسلات", Icons.Default.LiveTv, Color(0xFFB87333), onClick = onOpenChannels, modifier = Modifier.weight(1f))
+                    HomeSectionCard("قنوات", Icons.Default.Tv, Color(0xFF8FB8E8), onClick = onOpenChannels, modifier = Modifier.weight(1f))
+                }
             }
         }
-    }
-}
 
-
-@Composable
-private fun LiveHeroCard(channel: Channel, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp).heightIn(min = 174.dp)
-            .clickable(onClick = onClick).testTag("home_live_hero"),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = DarkSportsBlue),
-        border = androidx.compose.foundation.BorderStroke(1.dp, CalmGold.copy(alpha = 0.65f))
-    ) {
-        Box(
-            modifier = Modifier.fillMaxWidth()
-                .background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFF263B50), NightNavy, CardBackground)))
-                .padding(18.dp)
+        // تم التعديل: بطاقة بيانات الاشتراك أسفل اليسار مع إبقاء الأرقام اللاتينية.
+        Surface(
+            modifier = Modifier.align(Alignment.BottomStart).widthIn(min = 230.dp, max = 330.dp),
+            color = Color(0xCC111820),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
         ) {
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                    Surface(color = LiveRed.copy(alpha = 0.16f), shape = RoundedCornerShape(50),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, LiveRed.copy(alpha = 0.7f))) {
-                        Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Box(Modifier.size(7.dp).clip(CircleShape).background(LiveRed))
-                            Text("قنوات مباشرة", color = SnowWhite, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                    Text(channel.name, color = SnowWhite, style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(channel.currentProgram.ifBlank { "شاهد البث المباشر من اشتراكك" }, color = TextMuted,
-                        style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    Button(onClick = onClick, colors = ButtonDefaults.buttonColors(containerColor = CalmGold),
-                        shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = null, tint = NightNavy)
-                        Spacer(Modifier.width(6.dp))
-                        Text("شاهد الآن", color = NightNavy, fontWeight = FontWeight.Bold)
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 11.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text("اسم المستخدم", color = TextMuted, fontSize = 11.sp)
+                Text(subscription.username.ifBlank { subscription.name }, color = SnowWhite, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("رقم المشترك", color = TextMuted, fontSize = 11.sp)
+                Text(subscription.deviceId.ifBlank { subscription.username.ifBlank { "—" } }, color = SnowWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text("تاريخ انتهاء الصلاحية", color = TextMuted, fontSize = 11.sp)
+                Text(subscription.expiryDate.ifBlank { "—" }, color = SnowWhite, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            }
+        }
+
+        if (searchOpen) {
+            Surface(
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 58.dp).fillMaxWidth(0.48f),
+                color = Color(0xF0111820), shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, CardBorder)
+            ) {
+                Column(Modifier.padding(12.dp)) {
+                    OutlinedTextField(
+                        value = searchQuery, onValueChange = { searchQuery = it },
+                        modifier = Modifier.fillMaxWidth().testTag("home_channel_search"),
+                        singleLine = true, placeholder = { Text("البحث في القنوات", color = TextMuted) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = SnowWhite, unfocusedTextColor = SnowWhite,
+                            focusedBorderColor = Color(0xFFE0A526), unfocusedBorderColor = CardBorder,
+                            focusedContainerColor = CardBackground, unfocusedContainerColor = CardBackground
+                        )
+                    )
+                    searchResults.forEach { channel ->
+                        Text(
+                            channel.name, color = SnowWhite, modifier = Modifier.fillMaxWidth()
+                                .clickable { onSelectChannel(channel) }.padding(10.dp),
+                            maxLines = 1, overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
-                Spacer(Modifier.width(12.dp))
-                AsyncImage(model = channel.logoUrl.takeIf { it.isNotBlank() }, contentDescription = channel.name,
-                    modifier = Modifier.size(88.dp).clip(RoundedCornerShape(18.dp))
-                        .background(NightNavy.copy(alpha = 0.75f)).padding(8.dp),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Fit)
             }
+        }
+    }
+}
+
+private fun String.mapDigitsToArabic(): String = map { c ->
+    if (c in '0'..'9') ('٠'.code + (c - '0')).toChar() else c
+}
+
+@Composable
+private fun HomeToolButton(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    tint: Color,
+    onClick: () -> Unit
+) {
+    var focused by remember { mutableStateOf(false) }
+    Surface(
+        modifier = Modifier.size(46.dp).scale(if (focused) 1.04f else 1f)
+            .onFocusChanged { focused = it.isFocused }.focusable()
+            .clickable(onClick = onClick).testTag("home_tool_$label"),
+        shape = RoundedCornerShape(12.dp),
+        color = Color(0xAA111820),
+        border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) Color(0xFF8FB8E8) else Color.White.copy(alpha = 0.14f))
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(22.dp))
+        }
+    }
+}
+
+@Composable
+private fun HomeSectionCard(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    accent: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var focused by remember { mutableStateOf(false) }
+    Surface(
+        modifier = modifier.fillMaxHeight().scale(if (focused) 1.04f else 1f)
+            .onFocusChanged { focused = it.isFocused }.focusable().clickable(onClick = onClick)
+            .testTag("home_section_$title"),
+        color = Color(0x66101820),
+        shape = RoundedCornerShape(22.dp),
+        border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) Color(0xFF8FB8E8) else Color.White.copy(alpha = 0.15f))
+    ) {
+        Column(Modifier.fillMaxSize().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Surface(
+                modifier = Modifier.size(94.dp),
+                color = accent.copy(alpha = 0.12f),
+                shape = RoundedCornerShape(24.dp),
+                border = BorderStroke(1.dp, accent.copy(alpha = 0.45f))
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(54.dp))
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            Text(title, color = SnowWhite, fontSize = 20.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
         }
     }
 }

@@ -2,17 +2,17 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Classic Sports Luxury — Match Night Palette
-val NightNavy = Color(0xFF101827)          // الكحلي الليلي - Background
-val DarkSportsBlue = Color(0xFF182B3D)     // الأزرق الرياضي الداكن - Surface / Cards
-val CalmGold = Color(0xFFC6A45C)           // الذهبي الهادئ - Accents & Highlights
-val CalmGoldVariant = Color(0xFFDFC585)    // الذهبي الفاتح
-val LiveRed = Color(0xFFD83D48)            // الأحمر المباشر - Live indicators & alerts
-val SnowWhite = Color(0xFFE8EDF3)          // الأبيض الثلجي - Primary text & icons
-val SportsGreen = Color(0xFF27A879)        // الأخضر - Success & active state
+// تم التعديل: لوحة ألوان الواجهتين حسب المواصفات الجديدة.
+val NightNavy = Color(0xFF0A0F14)
+val DarkSportsBlue = Color(0xFF111820)
+val CalmGold = Color(0xFFE0A526)
+val CalmGoldVariant = Color(0xFFF0C45A)
+val LiveRed = Color(0xFFB85D45)
+val SnowWhite = Color(0xFFE8EDF3)
+val SportsGreen = Color(0xFF1F6F6B)
 
-val SurfaceNavyDark = Color(0xFF0D1420)    // خلفية المشغل والعناصر الغامقة
-val CardBackground = Color(0xFF152332)     // خلفية البطاقات
-val CardBorder = Color(0xFF243B52)         // حواف البطاقات
-val TextMuted = Color(0xFF94A3B8)          // نصوص ثانوية
-val FocusGold = Color(0xFFFFD700)          // إطار التركيز لشاشات التلفزيون
+val SurfaceNavyDark = Color(0xFF0D141B)
+val CardBackground = Color(0xFF111820)
+val CardBorder = Color(0xFF1E2A36)
+val TextMuted = Color(0xFFB8C2CC)
+val FocusGold = Color(0xFF8FB8E8)
