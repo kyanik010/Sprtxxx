@@ -74,7 +74,8 @@ class MainActivity : ComponentActivity() {
                 BackHandler(enabled = currentScreen != AppScreen.HOME && currentScreen != AppScreen.SETUP) {
                     currentScreen = when (currentScreen) {
                         AppScreen.PLAYER -> previousScreen
-                        AppScreen.ACCOUNT, AppScreen.CHANNELS, AppScreen.PLACEHOLDER -> AppScreen.HOME
+                        AppScreen.ACCOUNT, AppScreen.CHANNELS -> AppScreen.HOME
+                        AppScreen.VOD -> if (selectedSeriesTitle.isNotBlank()) { selectedSeriesTitle = ""; seriesEpisodes = emptyList(); AppScreen.VOD } else previousScreen
                         else -> AppScreen.HOME
                     }
                 }
@@ -93,8 +94,8 @@ class MainActivity : ComponentActivity() {
                                 channels = channels,
                                 subscription = subscription,
                                 onOpenChannels = { currentScreen = AppScreen.CHANNELS },
-                                onOpenMovies = { placeholderTitle = "أفلام"; currentScreen = AppScreen.PLACEHOLDER },
-                                onOpenSeries = { placeholderTitle = "مسلسلات"; currentScreen = AppScreen.PLACEHOLDER },
+                                onOpenMovies = { previousScreen = AppScreen.HOME; vodSection = "أفلام"; selectedSeriesTitle = ""; currentScreen = AppScreen.VOD },
+                                onOpenSeries = { previousScreen = AppScreen.HOME; vodSection = "مسلسلات"; selectedSeriesTitle = ""; currentScreen = AppScreen.VOD },
                                 onOpenAccount = { currentScreen = AppScreen.ACCOUNT },
                                 onExit = { finish() },
                                 onRefresh = { playerEngine.retryPlayback() },
@@ -117,8 +118,8 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onOpenAccount = { currentScreen = AppScreen.ACCOUNT },
                                 onBackHome = { currentScreen = AppScreen.HOME },
-                                onOpenMovies = { placeholderTitle = "أفلام"; currentScreen = AppScreen.PLACEHOLDER },
-                                onOpenSeries = { placeholderTitle = "مسلسلات"; currentScreen = AppScreen.PLACEHOLDER },
+                                onOpenMovies = { previousScreen = AppScreen.CHANNELS; vodSection = "أفلام"; selectedSeriesTitle = ""; currentScreen = AppScreen.VOD },
+                                onOpenSeries = { previousScreen = AppScreen.CHANNELS; vodSection = "مسلسلات"; selectedSeriesTitle = ""; currentScreen = AppScreen.VOD },
                                 playerEngine = playerEngine
                             )
                             AppScreen.ACCOUNT -> AccountScreen(
@@ -127,13 +128,48 @@ class MainActivity : ComponentActivity() {
                                     repository.saveSubscription(type, server, user, pass, m3u)
                                 }
                             )
-                            AppScreen.PLACEHOLDER -> PlaceholderSectionScreen(
-                                section = placeholderTitle,
-                                onBackHome = { currentScreen = AppScreen.HOME },
-                                onOpenChannels = { currentScreen = AppScreen.CHANNELS },
-                                onOpenMovies = { placeholderTitle = "أفلام" },
-                                onOpenSeries = { placeholderTitle = "مسلسلات" },
-                                onOpenAccount = { currentScreen = AppScreen.ACCOUNT }
+                            AppScreen.VOD -> VODBrowserScreen(
+                                section = vodSection,
+                                movies = vodMovies,
+                                series = vodSeries,
+                                episodes = seriesEpisodes,
+                                selectedSeriesTitle = selectedSeriesTitle,
+                                loadingEpisodes = loadingEpisodes,
+                                onBack = {
+                                    if (selectedSeriesTitle.isNotBlank()) {
+                                        selectedSeriesTitle = ""
+                                        seriesEpisodes = emptyList()
+                                    } else currentScreen = previousScreen
+                                },
+                                onSelectMovie = { movie ->
+                                    val vodChannel = Channel(
+                                        id = "vod_movie_" + movie.id,
+                                        channelNumber = 1,
+                                        name = movie.name,
+                                        categoryId = "أفلام",
+                                        streamUrl = movie.streamUrl,
+                                        logoUrl = movie.posterUrl
+                                    )
+                                    previousScreen = AppScreen.VOD
+                                    playerEngine.playChannel(vodChannel)
+                                    currentScreen = AppScreen.PLAYER
+                                },
+                                onSelectSeries = { item ->
+                                    selectedSeriesTitle = item.name
+                                    loadingEpisodes = true
+                                    seriesEpisodes = emptyList()
+                                    uiScope.launch {
+                                        seriesEpisodes = runCatching {
+                                            repository.loadSeriesEpisodes(item.id)
+                                        }.getOrDefault(emptyList())
+                                        loadingEpisodes = false
+                                    }
+                                },
+                                onPlayEpisode = { episode ->
+                                    previousScreen = AppScreen.VOD
+                                    playerEngine.playChannel(episode.asChannel())
+                                    currentScreen = AppScreen.PLAYER
+                                }
                             )
                             AppScreen.PLAYER -> PlayerScreen(
                                 playerEngine = playerEngine,
