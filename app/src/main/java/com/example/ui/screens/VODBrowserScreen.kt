@@ -214,13 +214,16 @@ private fun VodCategoryCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            if (category.posterUrl.isNotBlank()) {
+            var posterFailed by remember(category.posterUrl) { mutableStateOf(category.posterUrl.isBlank()) }
+            if (!posterFailed) {
                 AsyncImage(
                     model = category.posterUrl,
                     contentDescription = "صورة ${category.name}",
-                    modifier = Modifier.size(62.dp).clip(RoundedCornerShape(12.dp))
+                    modifier = Modifier.size(62.dp).clip(RoundedCornerShape(12.dp)),
+                    onError = { posterFailed = true }
                 )
-            } else {
+            }
+            if (posterFailed) {
                 Surface(
                     color = DarkSportsBlue,
                     shape = RoundedCornerShape(12.dp),
@@ -276,9 +279,10 @@ private fun VodPosterCard(
     ) {
         Column {
             Box(Modifier.fillMaxWidth().weight(1f).background(DarkSportsBlue), contentAlignment = Alignment.Center) {
-                if (poster.isNotBlank()) {
+                var posterFailed by remember(poster) { mutableStateOf(poster.isBlank()) }
+                if (!posterFailed) {
                     AsyncImage(poster, contentDescription = title, modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop)
+                        contentScale = ContentScale.Crop, onError = { posterFailed = true })
                 } else {
                     Icon(Icons.Default.Movie, null, tint = CalmGold, modifier = Modifier.size(42.dp))
                 }
