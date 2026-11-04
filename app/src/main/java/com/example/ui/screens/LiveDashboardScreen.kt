@@ -87,7 +87,7 @@ fun LiveDashboardScreen(
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Column(
-            modifier.fillMaxSize().background(LiveBackground).padding(7.dp),
+            modifier.fillMaxSize().background(LiveBackground).padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Row(
@@ -123,20 +123,20 @@ fun LiveDashboardScreen(
 
             Row(
                 modifier = Modifier.fillMaxWidth().weight(0.91f),
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                horizontalArrangement = Arrangement.spacedBy(9.dp)
             ) {
                 Column(
-                    modifier = Modifier.weight(0.04f).fillMaxHeight()
-                        .clip(RoundedCornerShape(10.dp)).background(LivePanel)
-                        .padding(vertical = 9.dp, horizontal = 4.dp),
+                    modifier = Modifier.width(66.dp).fillMaxHeight()
+                        .clip(RoundedCornerShape(13.dp)).background(LivePanel)
+                        .padding(vertical = 8.dp, horizontal = 5.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(11.dp)
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text("SX", color = SonixGold, fontSize = 15.sp, fontWeight = FontWeight.Black)
                     IconRailItem(Icons.Default.Tv, "مباشر", true) {}
                     IconRailItem(Icons.Default.Movie, "أفلام", false, onOpenMovies)
-                    IconRailItem(Icons.Default.Home, "مسلسلات", false, onOpenSeries)
-                    IconRailItem(Icons.Default.History, "السجل", false, onOpenPlayer)
+                    IconRailItem(Icons.Default.LiveTv, "مسلسلات", false, onOpenSeries)
+                    IconRailItem(Icons.Default.Refresh, "تحديث", false) { playerEngine.retryPlayback() }
                     Spacer(Modifier.weight(1f))
                     IconRailItem(Icons.Default.Settings, "الإعدادات", false, onOpenAccount)
                     IconRailItem(Icons.Default.Home, "الرئيسية", false, onBackHome)
@@ -321,7 +321,7 @@ private fun IconRailItem(
 ) {
     var focused by remember { mutableStateOf(false) }
     Surface(
-        modifier = Modifier.size(42.dp).scale(if (focused) 1.05f else 1f)
+        modifier = Modifier.size(40.dp).scale(if (focused) 1.05f else 1f)
             .onFocusChanged { focused = it.isFocused }.focusable().clickable(onClick = onClick)
             .testTag("rail_$label"),
         color = if (selected) SonixGold.copy(alpha = 0.12f) else Color(0x331C2A38),
@@ -369,10 +369,10 @@ fun PlaceholderSectionScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Column(
-                Modifier.width(68.dp).fillMaxHeight().clip(RoundedCornerShape(12.dp))
+                Modifier.width(76.dp).fillMaxHeight().clip(RoundedCornerShape(12.dp))
                     .background(LivePanel).padding(6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text("SX", color = SonixGold, fontSize = 17.sp, fontWeight = FontWeight.Black)
                 RailItem(Icons.Default.Tv, "مباشر", false, onOpenChannels)
