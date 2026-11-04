@@ -1,7 +1,9 @@
 <resources>
-    <string name="app_name">SONIX TV</string>
-    <string name="app_tagline">SONIX TV • Premium Entertainment</string>
+    <string name="app_name">ماتش نايت</string>
+    <string name="app_tagline">المنصة الرياضية الفاخرة</string>
     <string name="nav_home">الرئيسية</string>
+    <string name="nav_matches">المباريات</string>
     <string name="nav_channels">القنوات</string>
+    <string name="nav_favorites">المفضلة</string>
     <string name="nav_account">الاشتراك</string>
 </resources>
