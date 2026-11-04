@@ -206,14 +206,18 @@ class IptvRepository(private val context: Context) {
             val expiryDate = if (type == SubscriptionType.XTREAM_CODES) {
                 runCatching { fetchXtreamExpiry(serverUrl.trim(), user.trim(), pass) }.getOrDefault("")
             } else ""
-            prefs.edit()
+            val persisted = prefs.edit()
                 .putString("sub_expiry_date", expiryDate)
                 .putString("sub_type", type.name)
                 .putString("sub_server", serverUrl.trim())
                 .putString("sub_user", user.trim())
                 .putString("sub_pass", pass)
                 .putString("sub_m3u", m3uUrl.trim())
-                .apply()
+                .putBoolean("subscription_profile_saved", true)
+                .commit()
+            if (!persisted) {
+                throw IllegalStateException("تعذر حفظ بيانات الاشتراك")
+            }
             _currentSubscription.value = SubscriptionProfile(
                 name = "اشتراك IPTV", type = type, serverUrl = serverUrl.trim(),
                 username = user.trim(), password = pass, m3uUrl = m3uUrl.trim(),
@@ -240,12 +244,18 @@ class IptvRepository(private val context: Context) {
 
         val parsedChannels = mutableListOf<Channel>()
         val categoriesSet = linkedSetOf<String>()
+        val categoryNamesFromStreams = mutableMapOf<String, String>()
 
         for (i in 0 until jsonArray.length()) {
             val obj = jsonArray.getJSONObject(i)
             val streamId = obj.optString("stream_id")
-            val name = obj.optString("name")
+            val name = obj.optString("name").ifBlank {
+                obj.optString("stream_display_name").ifBlank { streamId }
+            }
             val category = obj.optString("category_id", "عام")
+            obj.optString("category_name").trim().takeIf { it.isNotBlank() }?.let {
+                categoryNamesFromStreams.putIfAbsent(category, it)
+            }
             val logo = obj.optString("stream_icon", "")
             val num = obj.optInt("num", i + 1)
             val streamUrl = "$cleanServer/live/$user/$pass/$streamId.m3u8"
@@ -281,7 +291,8 @@ class IptvRepository(private val context: Context) {
                                 val item = array.optJSONObject(index) ?: continue
                                 val id = item.optString("category_id")
                                 if (id.isNotBlank()) {
-                                    val name = item.optString("category_name").takeIf { it.isNotBlank() } ?: id
+                                    val name = item.optString("category_name").trim().takeIf { it.isNotBlank() }
+                                        ?: categoryNamesFromStreams[id] ?: id
                                     val logo = item.optString("category_icon",
                                         item.optString("category_logo", item.optString("cover", "")))
                                     put(id, name to logo)
@@ -297,7 +308,7 @@ class IptvRepository(private val context: Context) {
                 val representativeLogo = parsedChannels.firstOrNull { it.categoryId == id && it.logoUrl.isNotBlank() }?.logoUrl.orEmpty()
                 Category(
                     id = id,
-                    name = metadata?.first ?: id,
+                    name = metadata?.first?.takeIf { it.isNotBlank() } ?: categoryNamesFromStreams[id] ?: id,
                     channelCount = parsedChannels.count { it.categoryId == id },
                     logoUrl = metadata?.second?.takeIf { it.isNotBlank() } ?: representativeLogo
                 )
@@ -329,7 +340,9 @@ class IptvRepository(private val context: Context) {
                 for (i in 0 until array.length()) {
                     val item = array.optJSONObject(i) ?: continue
                     val id = item.optString("stream_id").takeIf { it.isNotBlank() } ?: continue
-                    val name = item.optString("name").ifBlank { "فيلم " + id }
+                    val name = item.optString("name").trim().ifBlank {
+                item.optString("o_name").trim().ifBlank { id }
+            }
                     val ext = item.optString("container_extension").ifBlank { "mp4" }
                     add(VodMovie(
                         id = id, name = name, categoryId = item.optString("category_id"),
@@ -349,7 +362,9 @@ class IptvRepository(private val context: Context) {
                     val item = array.optJSONObject(i) ?: continue
                     val id = item.optString("series_id").takeIf { it.isNotBlank() } ?: continue
                     add(VodSeries(
-                        id = id, name = item.optString("name").ifBlank { "مسلسل " + id },
+                        id = id, name = item.optString("name").trim().ifBlank {
+                            item.optString("o_name").trim().ifBlank { id }
+                        },
                         categoryId = item.optString("category_id"),
                         posterUrl = item.optString("cover").ifBlank { item.optString("cover_big") },
                         plot = item.optString("plot"), year = item.optString("releaseDate").take(4),
@@ -411,7 +426,9 @@ class IptvRepository(private val context: Context) {
                     val info = item.optJSONObject("info") ?: JSONObject()
                     val episodeNo = item.optInt("episode_num", i + 1)
                     result.add(VodEpisode(
-                        id = id, name = item.optString("title").ifBlank { "الحلقة " + episodeNo },
+                        id = id, name = item.optString("title").trim().ifBlank {
+                            info.optString("name").trim().ifBlank { id }
+                        },
                         season = season, episodeNumber = episodeNo,
                         posterUrl = info.optString("movie_image"),
                         streamUrl = server + "/series/" + user + "/" + pass + "/" + id + "." + ext
@@ -470,12 +487,13 @@ class IptvRepository(private val context: Context) {
                 val groupMatch = Regex("""group-title="([^"]+)"""").find(trimmed)
                 currentGroup = groupMatch?.groupValues?.get(1) ?: "غير مصنف"
 
+                val tvgName = Regex("""tvg-name="([^"]+)"""").find(trimmed)
+                    ?.groupValues?.get(1)?.trim().orEmpty()
                 val commaIndex = trimmed.lastIndexOf(',')
-                currentName = if (commaIndex != -1 && commaIndex < trimmed.length - 1) {
+                val displayName = if (commaIndex != -1 && commaIndex < trimmed.length - 1) {
                     trimmed.substring(commaIndex + 1).trim()
-                } else {
-                    "قناة رياضية $channelIndex"
-                }
+                } else ""
+                currentName = tvgName.ifBlank { displayName }.ifBlank { "قناة $channelIndex" }
             } else if (trimmed.isNotBlank() && !trimmed.startsWith("#")) {
                 // This is the stream URL
                 val id = "m3u_$channelIndex"
