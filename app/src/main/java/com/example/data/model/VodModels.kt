@@ -50,7 +50,8 @@ data class VodCategory(
 /** Combines provider category metadata with IDs found in the VOD catalog. */
 internal fun buildVodCategories(
     categories: List<VodCategory>,
-    itemCategoryIds: List<String>
+    itemCategoryIds: List<String>,
+    itemArtwork: Map<String, String> = emptyMap()
 ): List<VodCategory> {
     val counts = itemCategoryIds.filter { it.isNotBlank() }.groupingBy { it }.eachCount()
     val metadata = categories.filter { it.id.isNotBlank() }.associateBy { it.id }
@@ -61,7 +62,8 @@ internal fun buildVodCategories(
             id = id,
             name = category?.name?.takeIf { it.isNotBlank() } ?: id,
             itemCount = counts[id] ?: 0,
-            posterUrl = category?.posterUrl.orEmpty()
+            posterUrl = category?.posterUrl?.takeIf { it.isNotBlank() }
+                ?: itemArtwork[id].orEmpty()
         )
     }
 }
