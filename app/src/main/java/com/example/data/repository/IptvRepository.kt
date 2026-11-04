@@ -407,6 +407,9 @@ class IptvRepository(private val context: Context) {
     }
 
     suspend fun loadM3uFromUrl(m3uUrl: String): Int {
+        // Plain M3U playlists expose live entries only; they do not define Xtream VOD APIs.
+        _vodMovies.value = emptyList()
+        _vodSeries.value = emptyList()
         val request = Request.Builder().url(m3uUrl).build()
         val response = httpClient.newCall(request).execute()
         if (!response.isSuccessful) throw Exception("فشل تحميل قائمة M3U: رمز ${response.code}")
