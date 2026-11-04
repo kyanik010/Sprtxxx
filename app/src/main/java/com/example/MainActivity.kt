@@ -20,7 +20,7 @@ import com.example.player.MatchNightPlayerEngine
 import com.example.ui.screens.*
 import com.example.ui.theme.MatchNightTheme
 
-enum class AppScreen { HOME, CHANNELS, ACCOUNT, PLAYER, SETUP }
+enum class AppScreen { HOME, CHANNELS, ACCOUNT, PLAYER, PLACEHOLDER, SETUP }
 
 class MainActivity : ComponentActivity() {
     private lateinit var repository: IptvRepository
@@ -46,6 +46,7 @@ class MainActivity : ComponentActivity() {
 
                 var currentScreen by remember { mutableStateOf(if (subscription.isActive) AppScreen.HOME else AppScreen.SETUP) }
                 var selectedCategoryId by rememberSaveable { mutableStateOf("") }
+                var placeholderTitle by rememberSaveable { mutableStateOf("أفلام") }
                 var previousScreen by remember { mutableStateOf(AppScreen.HOME) }
 
                 LaunchedEffect(playingChannel?.id) {
@@ -65,7 +66,7 @@ class MainActivity : ComponentActivity() {
                 BackHandler(enabled = currentScreen != AppScreen.HOME && currentScreen != AppScreen.SETUP) {
                     currentScreen = when (currentScreen) {
                         AppScreen.PLAYER -> previousScreen
-                        AppScreen.ACCOUNT, AppScreen.CHANNELS -> AppScreen.HOME
+                        AppScreen.ACCOUNT, AppScreen.CHANNELS, AppScreen.PLACEHOLDER -> AppScreen.HOME
                         else -> AppScreen.HOME
                     }
                 }
@@ -84,6 +85,8 @@ class MainActivity : ComponentActivity() {
                                 channels = channels,
                                 subscription = subscription,
                                 onOpenChannels = { currentScreen = AppScreen.CHANNELS },
+                                onOpenMovies = { placeholderTitle = "أفلام"; currentScreen = AppScreen.PLACEHOLDER },
+                                onOpenSeries = { placeholderTitle = "مسلسلات"; currentScreen = AppScreen.PLACEHOLDER },
                                 onOpenAccount = { currentScreen = AppScreen.ACCOUNT },
                                 onExit = { finish() },
                                 onRefresh = { playerEngine.retryPlayback() },
@@ -106,6 +109,8 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onOpenAccount = { currentScreen = AppScreen.ACCOUNT },
                                 onBackHome = { currentScreen = AppScreen.HOME },
+                                onOpenMovies = { placeholderTitle = "أفلام"; currentScreen = AppScreen.PLACEHOLDER },
+                                onOpenSeries = { placeholderTitle = "مسلسلات"; currentScreen = AppScreen.PLACEHOLDER },
                                 playerEngine = playerEngine
                             )
                             AppScreen.ACCOUNT -> AccountScreen(
@@ -113,6 +118,14 @@ class MainActivity : ComponentActivity() {
                                 onSaveSubscription = { type, server, user, pass, m3u ->
                                     repository.saveSubscription(type, server, user, pass, m3u)
                                 }
+                            )
+                            AppScreen.PLACEHOLDER -> PlaceholderSectionScreen(
+                                section = placeholderTitle,
+                                onBackHome = { currentScreen = AppScreen.HOME },
+                                onOpenChannels = { currentScreen = AppScreen.CHANNELS },
+                                onOpenMovies = { placeholderTitle = "أفلام" },
+                                onOpenSeries = { placeholderTitle = "مسلسلات" },
+                                onOpenAccount = { currentScreen = AppScreen.ACCOUNT }
                             )
                             AppScreen.PLAYER -> PlayerScreen(
                                 playerEngine = playerEngine,

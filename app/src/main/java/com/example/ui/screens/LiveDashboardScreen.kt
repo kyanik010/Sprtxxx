@@ -54,6 +54,8 @@ fun LiveDashboardScreen(
     onOpenPlayer: () -> Unit,
     onOpenAccount: () -> Unit,
     onBackHome: () -> Unit,
+    onOpenMovies: () -> Unit,
+    onOpenSeries: () -> Unit,
     playerEngine: MatchNightPlayerEngine,
     modifier: Modifier = Modifier
 ) {
@@ -94,9 +96,9 @@ fun LiveDashboardScreen(
                     Text("LIVE", color = Color(0xFF8FB8E8), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
                 }
                 RailItem(Icons.Default.Tv, "مباشر", true) {}
-                RailItem(Icons.Default.Movie, "أفلام", false) {}
-                RailItem(Icons.Default.Home, "مسلسلات", false) {}
-                RailItem(Icons.Default.History, "السجل", false) {}
+                RailItem(Icons.Default.Movie, "أفلام", false, onOpenMovies)
+                RailItem(Icons.Default.Home, "مسلسلات", false, onOpenSeries)
+                RailItem(Icons.Default.History, "السجل", false, onOpenPlayer)
                 Spacer(Modifier.weight(1f))
                 RailItem(Icons.Default.Settings, "الإعدادات", false, onOpenAccount)
             }
@@ -311,4 +313,37 @@ private fun FocusRow(
         border = BorderStroke(if (focused) 2.dp else if (selected) 1.dp else 0.dp,
             if (focused) Color(0xFF8FB8E8) else Color.White.copy(alpha = 0.14f))
     ) { content() }
+}
+
+
+@Composable
+fun PlaceholderSectionScreen(
+    section: String,
+    onBackHome: () -> Unit,
+    onOpenChannels: () -> Unit,
+    onOpenMovies: () -> Unit,
+    onOpenSeries: () -> Unit,
+    onOpenAccount: () -> Unit
+) {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        Row(Modifier.fillMaxSize().background(Color(0xFF0A0F14)).padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                Modifier.width(68.dp).fillMaxHeight().clip(RoundedCornerShape(12.dp)).background(Color(0xFF111820)).padding(6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Text("IPTV", color = SnowWhite, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
+                Text("LIVE", color = Color(0xFF8FB8E8), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
+                RailItem(Icons.Default.Tv, "مباشر", false, onOpenChannels)
+                RailItem(Icons.Default.Movie, "أفلام", section == "أفلام", onOpenMovies)
+                RailItem(Icons.Default.Home, "مسلسلات", section == "مسلسلات", onOpenSeries)
+                Spacer(Modifier.weight(1f))
+                RailItem(Icons.Default.Settings, "الإعدادات", false, onOpenAccount)
+                RailItem(Icons.Default.Home, "الرئيسية", false, onBackHome)
+            }
+            Box(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(12.dp)).background(Color(0xFF111820)), contentAlignment = Alignment.Center) {
+                Text(section, color = SnowWhite, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
 }

@@ -44,6 +44,8 @@ fun HomeScreen(
     channels: List<Channel>,
     subscription: SubscriptionProfile,
     onOpenChannels: () -> Unit,
+    onOpenMovies: () -> Unit,
+    onOpenSeries: () -> Unit,
     onOpenAccount: () -> Unit,
     onExit: () -> Unit,
     onRefresh: () -> Unit,
@@ -72,6 +74,7 @@ fun HomeScreen(
         ).padding(horizontal = 22.dp, vertical = 14.dp)
     ) {
         // تم التعديل: تخطيط الشاشة الرئيسية الأفقي وشريط الأدوات العلوي.
+        CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr) {
         Row(
             modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -93,6 +96,7 @@ fun HomeScreen(
                 Text("S T R E M", color = TextMuted, fontSize = 9.sp, letterSpacing = 4.sp)
             }
         }
+        }
 
         // تم التعديل: لوحة زجاجية مركزية بثلاث بطاقات متساوية.
         Surface(
@@ -108,8 +112,8 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(18.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    HomeSectionCard("أفلام", Icons.Default.Movie, Color(0xFFB87333), onClick = onOpenChannels, modifier = Modifier.weight(1f))
-                    HomeSectionCard("مسلسلات", Icons.Default.LiveTv, Color(0xFFB87333), onClick = onOpenChannels, modifier = Modifier.weight(1f))
+                    HomeSectionCard("أفلام", Icons.Default.Movie, Color(0xFFB87333), onClick = onOpenMovies, modifier = Modifier.weight(1f))
+                    HomeSectionCard("مسلسلات", Icons.Default.LiveTv, Color(0xFFB87333), onClick = onOpenSeries, modifier = Modifier.weight(1f))
                     HomeSectionCard("قنوات", Icons.Default.Tv, Color(0xFF8FB8E8), onClick = onOpenChannels, modifier = Modifier.weight(1f))
                 }
             }
@@ -117,7 +121,7 @@ fun HomeScreen(
 
         // تم التعديل: بطاقة بيانات الاشتراك أسفل اليسار مع إبقاء الأرقام اللاتينية.
         Surface(
-            modifier = Modifier.align(Alignment.BottomStart).widthIn(min = 230.dp, max = 330.dp),
+            modifier = Modifier.align(Alignment.BottomEnd).widthIn(min = 230.dp, max = 330.dp),
             color = Color(0xCC111820),
             shape = RoundedCornerShape(16.dp),
             border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
@@ -128,7 +132,7 @@ fun HomeScreen(
                 Text("رقم المشترك", color = TextMuted, fontSize = 11.sp)
                 Text(subscription.deviceId.ifBlank { subscription.username.ifBlank { "—" } }, color = SnowWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                 Text("تاريخ انتهاء الصلاحية", color = TextMuted, fontSize = 11.sp)
-                Text(subscription.expiryDate.ifBlank { "—" }, color = SnowWhite, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Text(subscription.expiryDate.ifBlank { "—" }.mapDigitsToArabic(), color = SnowWhite, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
             }
         }
 
