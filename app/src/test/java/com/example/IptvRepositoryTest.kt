@@ -10,6 +10,25 @@ import java.io.StringReader
 class IptvRepositoryTest {
 
     @Test
+    fun vodCategoriesUseProviderNamesAndCountCatalogItems() {
+        val categories = buildVodCategories(
+            listOf(
+                VodCategory("10", "أكشن"),
+                VodCategory("20", "دراما", posterUrl = "https://example.com/drama.png")
+            ),
+            listOf("10", "10", "20", "30", "")
+        )
+
+        assertEquals(3, categories.size)
+        assertEquals("أكشن", categories[0].name)
+        assertEquals(2, categories[0].itemCount)
+        assertEquals(1, categories[1].itemCount)
+        assertEquals("https://example.com/drama.png", categories[1].posterUrl)
+        assertEquals("30", categories[2].name)
+        assertEquals(1, categories[2].itemCount)
+    }
+
+    @Test
     fun audioSourceClassifierSeparatesBeinAndAlwan() {
         assertEquals(AudioSourceCategory.BEIN_SPORTS, classifyAudioSource("beIN SPORTS 1 HD", "sports"))
         assertEquals(AudioSourceCategory.ALWAN, classifyAudioSource("ALWAN SPORT", "sports"))

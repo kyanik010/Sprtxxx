@@ -36,6 +36,10 @@ class IptvRepository(private val context: Context) {
     val vodMovies: StateFlow<List<VodMovie>> = _vodMovies.asStateFlow()
     private val _vodSeries = MutableStateFlow<List<VodSeries>>(emptyList())
     val vodSeries: StateFlow<List<VodSeries>> = _vodSeries.asStateFlow()
+    private val _vodMovieCategories = MutableStateFlow<List<VodCategory>>(emptyList())
+    val vodMovieCategories: StateFlow<List<VodCategory>> = _vodMovieCategories.asStateFlow()
+    private val _vodSeriesCategories = MutableStateFlow<List<VodCategory>>(emptyList())
+    val vodSeriesCategories: StateFlow<List<VodCategory>> = _vodSeriesCategories.asStateFlow()
     val channels: StateFlow<List<Channel>> = _channels.asStateFlow()
 
     private val _categories = MutableStateFlow<List<Category>>(emptyList())
@@ -319,7 +323,7 @@ class IptvRepository(private val context: Context) {
             }
         }
 
-        _vodMovies.value = runCatching {
+        val movies = runCatching {
             val array = readArray("get_vod_streams")
             buildList {
                 for (i in 0 until array.length()) {
@@ -336,8 +340,9 @@ class IptvRepository(private val context: Context) {
                 }
             }
         }.getOrDefault(emptyList())
+        _vodMovies.value = movies
 
-        _vodSeries.value = runCatching {
+        val series = runCatching {
             val array = readArray("get_series")
             buildList {
                 for (i in 0 until array.length()) {
@@ -353,6 +358,30 @@ class IptvRepository(private val context: Context) {
                 }
             }
         }.getOrDefault(emptyList())
+        _vodSeries.value = series
+
+        fun parseCategories(array: JSONArray): List<VodCategory> = buildList {
+            for (i in 0 until array.length()) {
+                val item = array.optJSONObject(i) ?: continue
+                val id = item.optString("category_id").takeIf { it.isNotBlank() } ?: continue
+                val name = item.optString("category_name").ifBlank { id }
+                val poster = item.optString("category_icon")
+                    .ifBlank { item.optString("category_logo") }
+                    .ifBlank { item.optString("cover") }
+                    .ifBlank { item.optString("cover_big") }
+                add(VodCategory(id = id, name = name, posterUrl = poster))
+            }
+        }
+
+        val movieCategories = runCatching {
+            parseCategories(readArray("get_vod_categories"))
+        }.getOrDefault(emptyList())
+        val seriesCategories = runCatching {
+            parseCategories(readArray("get_series_categories"))
+        }.getOrDefault(emptyList())
+
+        _vodMovieCategories.value = buildVodCategories(movieCategories, movies.map { it.categoryId })
+        _vodSeriesCategories.value = buildVodCategories(seriesCategories, series.map { it.categoryId })
     }
 
     suspend fun loadSeriesEpisodes(seriesId: String): List<VodEpisode> = withContext(Dispatchers.IO) {
@@ -410,6 +439,8 @@ class IptvRepository(private val context: Context) {
         // Plain M3U playlists expose live entries only; they do not define Xtream VOD APIs.
         _vodMovies.value = emptyList()
         _vodSeries.value = emptyList()
+        _vodMovieCategories.value = emptyList()
+        _vodSeriesCategories.value = emptyList()
         val request = Request.Builder().url(m3uUrl).build()
         val response = httpClient.newCall(request).execute()
         if (!response.isSuccessful) throw Exception("فشل تحميل قائمة M3U: رمز ${response.code}")

@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -25,6 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.data.model.VodCategory
 import com.example.data.model.VodEpisode
 import com.example.data.model.VodMovie
 import com.example.data.model.VodSeries
@@ -35,10 +38,14 @@ fun VODBrowserScreen(
     section: String,
     movies: List<VodMovie>,
     series: List<VodSeries>,
+    movieCategories: List<VodCategory>,
+    seriesCategories: List<VodCategory>,
+    selectedCategoryId: String,
     episodes: List<VodEpisode>,
     selectedSeriesTitle: String,
     loadingEpisodes: Boolean,
     onBack: () -> Unit,
+    onSelectCategory: (String) -> Unit,
     onSelectMovie: (VodMovie) -> Unit,
     onSelectSeries: (VodSeries) -> Unit,
     onPlayEpisode: (VodEpisode) -> Unit,
@@ -46,7 +53,14 @@ fun VODBrowserScreen(
 ) {
     val isMovies = section == "أفلام"
     val showingEpisodes = selectedSeriesTitle.isNotBlank()
-    val count = if (isMovies) movies.size else if (showingEpisodes) episodes.size else series.size
+    val categories = if (isMovies) movieCategories else seriesCategories
+    val visibleMovies = remember(movies, selectedCategoryId) {
+        if (selectedCategoryId.isBlank()) movies else movies.filter { it.categoryId == selectedCategoryId }
+    }
+    val visibleSeries = remember(series, selectedCategoryId) {
+        if (selectedCategoryId.isBlank()) series else series.filter { it.categoryId == selectedCategoryId }
+    }
+    val count = if (isMovies) visibleMovies.size else if (showingEpisodes) episodes.size else visibleSeries.size
 
     Column(modifier.fillMaxSize().background(NightNavy).padding(horizontal = 18.dp, vertical = 10.dp)) {
         Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -61,6 +75,30 @@ fun VODBrowserScreen(
                     color = SnowWhite, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
                     maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("$count عنصر", color = TextMuted, style = MaterialTheme.typography.labelSmall)
+            }
+        }
+
+        if (!showingEpisodes && categories.isNotEmpty()) {
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(bottom = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FilterChip(
+                    selected = selectedCategoryId.isBlank(),
+                    onClick = { onSelectCategory("") },
+                    label = { Text("الكل") }
+                )
+                categories.forEach { category ->
+                    FilterChip(
+                        selected = selectedCategoryId == category.id,
+                        onClick = { onSelectCategory(category.id) },
+                        label = { Text("${category.name} • ${category.itemCount}") },
+                        leadingIcon = if (category.posterUrl.isNotBlank()) {
+                            { AsyncImage(model = category.posterUrl, contentDescription = null, modifier = Modifier.size(20.dp)) }
+                        } else null
+                    )
+                }
             }
         }
 
@@ -89,7 +127,7 @@ fun VODBrowserScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 if (isMovies) {
-                    items(movies, key = { "movie_${it.id}" }) { movie ->
+                    items(visibleMovies, key = { "movie_${it.id}" }) { movie ->
                         VodPosterCard(movie.name, movie.posterUrl, movie.year, movie.rating) { onSelectMovie(movie) }
                     }
                 } else if (showingEpisodes) {
@@ -99,7 +137,7 @@ fun VODBrowserScreen(
                         }
                     }
                 } else {
-                    items(series, key = { "series_${it.id}" }) { item ->
+                    items(visibleSeries, key = { "series_${it.id}" }) { item ->
                         VodPosterCard(item.name, item.posterUrl, item.year, item.rating) { onSelectSeries(item) }
                     }
                 }

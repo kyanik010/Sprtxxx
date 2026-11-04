@@ -40,6 +40,8 @@ class MainActivity : ComponentActivity() {
                 val channels by repository.channels.collectAsState()
                 val vodMovies by repository.vodMovies.collectAsState()
                 val vodSeries by repository.vodSeries.collectAsState()
+                val vodMovieCategories by repository.vodMovieCategories.collectAsState()
+                val vodSeriesCategories by repository.vodSeriesCategories.collectAsState()
                 val categories by repository.categories.collectAsState()
                 val audioSources by repository.audioSources.collectAsState()
                 val favorites by repository.favorites.collectAsState()
@@ -51,6 +53,7 @@ class MainActivity : ComponentActivity() {
                 var currentScreen by remember { mutableStateOf(if (subscription.isActive) AppScreen.HOME else AppScreen.SETUP) }
                 var selectedCategoryId by rememberSaveable { mutableStateOf("") }
                 var vodSection by rememberSaveable { mutableStateOf("أفلام") }
+                var selectedVodCategoryId by rememberSaveable { mutableStateOf("") }
                 var selectedSeriesTitle by rememberSaveable { mutableStateOf("") }
                 var seriesEpisodes by remember { mutableStateOf<List<VodEpisode>>(emptyList()) }
                 var loadingEpisodes by remember { mutableStateOf(false) }
@@ -94,8 +97,8 @@ class MainActivity : ComponentActivity() {
                                 channels = channels,
                                 subscription = subscription,
                                 onOpenChannels = { currentScreen = AppScreen.CHANNELS },
-                                onOpenMovies = { previousScreen = AppScreen.HOME; vodSection = "أفلام"; selectedSeriesTitle = ""; currentScreen = AppScreen.VOD },
-                                onOpenSeries = { previousScreen = AppScreen.HOME; vodSection = "مسلسلات"; selectedSeriesTitle = ""; currentScreen = AppScreen.VOD },
+                                onOpenMovies = { previousScreen = AppScreen.HOME; vodSection = "أفلام"; selectedVodCategoryId = ""; selectedSeriesTitle = ""; currentScreen = AppScreen.VOD },
+                                onOpenSeries = { previousScreen = AppScreen.HOME; vodSection = "مسلسلات"; selectedVodCategoryId = ""; selectedSeriesTitle = ""; currentScreen = AppScreen.VOD },
                                 onOpenAccount = { currentScreen = AppScreen.ACCOUNT },
                                 onExit = { finish() },
                                 onRefresh = { playerEngine.retryPlayback() },
@@ -118,8 +121,8 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onOpenAccount = { currentScreen = AppScreen.ACCOUNT },
                                 onBackHome = { currentScreen = AppScreen.HOME },
-                                onOpenMovies = { previousScreen = AppScreen.CHANNELS; vodSection = "أفلام"; selectedSeriesTitle = ""; currentScreen = AppScreen.VOD },
-                                onOpenSeries = { previousScreen = AppScreen.CHANNELS; vodSection = "مسلسلات"; selectedSeriesTitle = ""; currentScreen = AppScreen.VOD },
+                                onOpenMovies = { previousScreen = AppScreen.CHANNELS; vodSection = "أفلام"; selectedVodCategoryId = ""; selectedSeriesTitle = ""; currentScreen = AppScreen.VOD },
+                                onOpenSeries = { previousScreen = AppScreen.CHANNELS; vodSection = "مسلسلات"; selectedVodCategoryId = ""; selectedSeriesTitle = ""; currentScreen = AppScreen.VOD },
                                 playerEngine = playerEngine
                             )
                             AppScreen.ACCOUNT -> AccountScreen(
@@ -132,6 +135,9 @@ class MainActivity : ComponentActivity() {
                                 section = vodSection,
                                 movies = vodMovies,
                                 series = vodSeries,
+                                movieCategories = vodMovieCategories,
+                                seriesCategories = vodSeriesCategories,
+                                selectedCategoryId = selectedVodCategoryId,
                                 episodes = seriesEpisodes,
                                 selectedSeriesTitle = selectedSeriesTitle,
                                 loadingEpisodes = loadingEpisodes,
@@ -141,6 +147,7 @@ class MainActivity : ComponentActivity() {
                                         seriesEpisodes = emptyList()
                                     } else currentScreen = previousScreen
                                 },
+                                onSelectCategory = { selectedVodCategoryId = it },
                                 onSelectMovie = { movie ->
                                     val vodChannel = Channel(
                                         id = "vod_movie_" + movie.id,
