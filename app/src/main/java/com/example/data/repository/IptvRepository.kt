@@ -222,7 +222,7 @@ class IptvRepository(private val context: Context) {
         val jsonArray = JSONArray(jsonStr)
 
         val parsedChannels = mutableListOf<Channel>()
-        val categoriesSet = linkedSetOf<String>()
+        val categoriesSet = mutableSetOf<String>()
 
         for (i in 0 until jsonArray.length()) {
             val obj = jsonArray.getJSONObject(i)
@@ -250,41 +250,7 @@ class IptvRepository(private val context: Context) {
         if (parsedChannels.isNotEmpty()) {
             syncAudioSources(parsedChannels)
             _channels.value = parsedChannels
-
-            // Read display names and optional category artwork from the provider API.
-            val categoryMetadata = runCatching {
-                val categoriesUrl = "${cleanServer}/player_api.php?username=${user}&password=${pass}&action=get_live_categories"
-                val categoriesRequest = Request.Builder().url(categoriesUrl).build()
-                httpClient.newCall(categoriesRequest).execute().use { response ->
-                    if (!response.isSuccessful) emptyMap<String, Pair<String, String>>()
-                    else {
-                        val array = JSONArray(response.body?.string().orEmpty())
-                        buildMap {
-                            for (index in 0 until array.length()) {
-                                val item = array.optJSONObject(index) ?: continue
-                                val id = item.optString("category_id")
-                                if (id.isNotBlank()) {
-                                    val name = item.optString("category_name").takeIf { it.isNotBlank() } ?: id
-                                    val logo = item.optString("category_icon",
-                                        item.optString("category_logo", item.optString("cover", "")))
-                                    put(id, name to logo)
-                                }
-                            }
-                        }
-                    }
-                }
-            }.getOrDefault(emptyMap())
-
-            _categories.value = categoriesSet.map { id ->
-                val metadata = categoryMetadata[id]
-                val representativeLogo = parsedChannels.firstOrNull { it.categoryId == id && it.logoUrl.isNotBlank() }?.logoUrl.orEmpty()
-                Category(
-                    id = id,
-                    name = metadata?.first ?: id,
-                    channelCount = parsedChannels.count { it.categoryId == id },
-                    logoUrl = metadata?.second?.takeIf { it.isNotBlank() } ?: representativeLogo
-                )
-            }
+            _categories.value = categoriesSet.map { Category(id = it, name = it, channelCount = parsedChannels.count { c -> c.categoryId == it }) }
             return parsedChannels.size
         } else {
             throw Exception("لم يتم العثور على قنوات في هذا الاشتراك")
@@ -352,12 +318,7 @@ class IptvRepository(private val context: Context) {
         if (parsedChannels.isNotEmpty()) {
             syncAudioSources(parsedChannels)
             _channels.value = parsedChannels
-            _categories.value = categoriesMap.map { entry ->
-                val representativeLogo = parsedChannels.firstOrNull {
-                    it.categoryId == entry.key && it.logoUrl.isNotBlank()
-                }?.logoUrl.orEmpty()
-                Category(id = entry.key, name = entry.key, channelCount = entry.value, logoUrl = representativeLogo)
-            }
+            _categories.value = categoriesMap.map { Category(id = it.key, name = it.key, channelCount = it.value) }
             return parsedChannels.size
         } else {
             throw Exception("لم يتم العثور على قنوات صالحة في ملف M3U")

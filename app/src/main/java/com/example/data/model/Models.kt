@@ -18,11 +18,14 @@ data class Channel(
 data class Category(
     val id: String,
     val name: String,
-    val channelCount: Int = 0,
-    val logoUrl: String = ""
+    val channelCount: Int = 0
 )
 
-enum class MatchStatus { LIVE, UPCOMING, FINISHED }
+enum class MatchStatus {
+    LIVE,
+    UPCOMING,
+    FINISHED
+}
 
 data class Match(
     val id: String,
@@ -42,7 +45,11 @@ data class Match(
     val commentator: String = ""
 )
 
-enum class SubscriptionType { XTREAM_CODES, M3U_PLAYLIST, NONE }
+enum class SubscriptionType {
+    XTREAM_CODES,
+    M3U_PLAYLIST,
+    NONE
+}
 
 data class SubscriptionProfile(
     val id: String = "default",
@@ -60,7 +67,10 @@ data class SubscriptionProfile(
     val deviceModel: String = ""
 )
 
-enum class AudioSourceCategory { BEIN_SPORTS, ALWAN }
+enum class AudioSourceCategory {
+    BEIN_SPORTS,
+    ALWAN
+}
 
 data class AudioCommentarySource(
     val channelId: String,
@@ -75,20 +85,29 @@ fun classifyAudioSource(name: String, categoryId: String): AudioSourceCategory? 
     val searchable = "$name $categoryId"
         .lowercase()
         .replace(Regex("[\\u064B-\\u065F\\u0670]"), "")
-        .replace('أ', 'ا').replace('إ', 'ا').replace('آ', 'ا')
-        .replace(Regex("[^a-z0-9\\u0600-\\u06FF]+"), " ").trim()
-    val isBein = listOf("bein sports", "bein sport", "beinsports", "beinsport",
-        "be in sports", "be in sport", "بي ان سبورت", "بي ان", "بين سبورت").any(searchable::contains)
+        .replace('أ', 'ا')
+        .replace('إ', 'ا')
+        .replace('آ', 'ا')
+        .replace(Regex("[^a-z0-9\\u0600-\\u06FF]+"), " ")
+        .trim()
+
+    val isBein = listOf(
+        "bein sports", "bein sport", "beinsports", "beinsport",
+        "be in sports", "be in sport", "بي ان سبورت", "بي ان", "بين سبورت"
+    ).any(searchable::contains)
     if (isBein) return AudioSourceCategory.BEIN_SPORTS
-    val isAlwan = Regex("""\b(alwan|al wan)\b""").containsMatchIn(searchable) || searchable.contains("الوان")
+
+    val isAlwan = Regex("""\b(alwan|al wan)\b""").containsMatchIn(searchable) ||
+        searchable.contains("الوان")
     if (isAlwan) return AudioSourceCategory.ALWAN
+
     return null
 }
 
 data class ExternalAudioState(
     val isExternalAudioActive: Boolean = false,
     val activeSource: AudioCommentarySource? = null,
-    val delayMs: Long = 0L,
+    val delayMs: Long = 0L, // -10000ms to +10000ms
     val isBuffering: Boolean = false,
     val errorMessage: String? = null
 )
