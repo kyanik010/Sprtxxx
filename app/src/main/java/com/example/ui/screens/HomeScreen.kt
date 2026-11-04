@@ -2,7 +2,6 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
@@ -39,6 +38,11 @@ import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.delay
 
+private val SonixGold = Color(0xFFE0A526)
+private val HomeBackground = Color(0xFF0B1118)
+private val HomePanel = Color(0xFF111820)
+private val HomeCard = Color(0xFF1C2A38)
+
 @Composable
 fun HomeScreen(
     channels: List<Channel>,
@@ -55,14 +59,15 @@ fun HomeScreen(
     var searchOpen by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var clock by remember { mutableStateOf("") }
+
     LaunchedEffect(Unit) {
         while (true) {
             clock = SimpleDateFormat("hh:mm a", Locale("ar")).format(Date())
-                .replace("AM", "ص").replace("PM", "م")
-                .mapDigitsToArabic()
+                .replace("AM", "ص").replace("PM", "م").mapDigitsToArabic()
             delay(30_000)
         }
     }
+
     val searchResults = remember(channels, searchQuery) {
         if (searchQuery.isBlank()) emptyList()
         else channels.filter { it.name.contains(searchQuery.trim(), ignoreCase = true) }.take(8)
@@ -70,100 +75,122 @@ fun HomeScreen(
 
     BoxWithConstraints(
         modifier = modifier.fillMaxSize().background(
-            Brush.linearGradient(listOf(Color(0xFF0B1118), Color(0xFF1A2430)))
-        ).padding(horizontal = 22.dp, vertical = 14.dp)
+            Brush.linearGradient(listOf(HomeBackground, Color(0xFF17212B)))
+        ).padding(horizontal = 26.dp, vertical = 18.dp)
     ) {
-        // تم التعديل: تخطيط الشاشة الرئيسية الأفقي وشريط الأدوات العلوي.
         CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr) {
-        Row(
-            modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                HomeToolButton("إغلاق", Icons.Default.PowerSettingsNew, Color(0xFFB85D45), onExit)
-                HomeToolButton("تحديث", Icons.Default.Refresh, SnowWhite, onRefresh)
-                HomeToolButton("الملف الشخصي", Icons.Default.Person, SnowWhite, onOpenAccount)
-                HomeToolButton("الإعدادات", Icons.Default.Settings, SnowWhite, onOpenAccount)
-                HomeToolButton("بحث", Icons.Default.Search, SnowWhite) { searchOpen = !searchOpen }
-            }
-            Text(clock, color = SnowWhite, fontSize = 27.sp, fontWeight = FontWeight.SemiBold)
-            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("IPTV", color = Color(0xFFD6DEE8), fontSize = 27.sp, fontWeight = FontWeight.ExtraBold)
-                    Text("LIVE", color = Color(0xFF8FB8E8), fontSize = 27.sp, fontWeight = FontWeight.ExtraBold)
+            Row(
+                modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                    HomeToolButton("إيقاف", Icons.Default.PowerSettingsNew, Color(0xFFD65B4B), onExit)
+                    HomeToolButton("تحديث", Icons.Default.Refresh, SnowWhite, onRefresh)
+                    HomeToolButton("الملف الشخصي", Icons.Default.Person, SnowWhite, onOpenAccount)
+                    HomeToolButton("الإعدادات", Icons.Default.Settings, SnowWhite, onOpenAccount)
+                    HomeToolButton("بحث", Icons.Default.Search, SnowWhite) { searchOpen = !searchOpen }
                 }
-                Text("S T R E M", color = TextMuted, fontSize = 9.sp, letterSpacing = 4.sp)
+                Text(clock, color = Color(0xFFE8EDF3), fontSize = 27.sp, fontWeight = FontWeight.Bold)
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("SONIX TV", color = SnowWhite, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+                    Text("PREMIUM IPTV", color = SonixGold, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 3.sp)
+                }
             }
-        }
         }
 
-        // تم التعديل: لوحة زجاجية مركزية بثلاث بطاقات متساوية.
         Surface(
-            modifier = Modifier.align(Alignment.Center).fillMaxWidth(0.80f).fillMaxHeight(0.58f),
-            color = Color(0xB51C2A38),
-            shape = RoundedCornerShape(28.dp),
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)),
-            shadowElevation = 16.dp
+            modifier = Modifier.align(Alignment.Center).fillMaxWidth(0.82f).fillMaxHeight(0.54f),
+            color = Color(0xB5111820),
+            shape = RoundedCornerShape(24.dp),
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.10f)),
+            shadowElevation = 18.dp
         ) {
             CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr) {
                 Row(
-                    modifier = Modifier.fillMaxSize().padding(20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(18.dp),
+                    modifier = Modifier.fillMaxSize().padding(18.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    HomeSectionCard("أفلام", Icons.Default.Movie, Color(0xFFB87333), onClick = onOpenMovies, modifier = Modifier.weight(1f))
-                    HomeSectionCard("مسلسلات", Icons.Default.LiveTv, Color(0xFFB87333), onClick = onOpenSeries, modifier = Modifier.weight(1f))
-                    HomeSectionCard("قنوات", Icons.Default.Tv, Color(0xFF8FB8E8), onClick = onOpenChannels, modifier = Modifier.weight(1f))
+                    HomeSectionCard("أفلام", Icons.Default.Movie, SonixGold, onOpenMovies, Modifier.weight(1f))
+                    HomeSectionCard("مسلسلات", Icons.Default.LiveTv, SonixGold, onOpenSeries, Modifier.weight(1f))
+                    HomeSectionCard("قنوات", Icons.Default.Tv, SonixGold, onOpenChannels, Modifier.weight(1f))
                 }
             }
         }
 
-        // تم التعديل: بطاقة بيانات الاشتراك أسفل اليسار مع إبقاء الأرقام اللاتينية.
         Surface(
-            modifier = Modifier.align(Alignment.BottomEnd).widthIn(min = 230.dp, max = 330.dp),
+            modifier = Modifier.align(Alignment.BottomCenter).widthIn(min = 300.dp, max = 520.dp),
             color = Color(0xCC111820),
-            shape = RoundedCornerShape(16.dp),
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.10f)),
+            shadowElevation = 8.dp
         ) {
-            Column(Modifier.padding(horizontal = 16.dp, vertical = 11.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text("اسم المستخدم", color = TextMuted, fontSize = 11.sp)
-                Text(subscription.username.ifBlank { subscription.name }, color = SnowWhite, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("رقم المشترك", color = TextMuted, fontSize = 11.sp)
-                Text(subscription.deviceId.ifBlank { subscription.username.ifBlank { "—" } }, color = SnowWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                Text("تاريخ انتهاء الصلاحية", color = TextMuted, fontSize = 11.sp)
-                Text(subscription.expiryDate.ifBlank { "—" }.mapDigitsToArabic(), color = SnowWhite, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Rtl) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HomeSubscriptionValue("اسم المستخدم", subscription.username.ifBlank { subscription.name })
+                    HomeInfoDivider()
+                    HomeSubscriptionValue("رقم المشترك", subscription.deviceId.ifBlank { subscription.username.ifBlank { "—" } })
+                    HomeInfoDivider()
+                    HomeSubscriptionValue("انتهاء الصلاحية", subscription.expiryDate.ifBlank { "—" }.mapDigitsToArabic())
+                }
             }
         }
 
         if (searchOpen) {
             Surface(
-                modifier = Modifier.align(Alignment.TopCenter).padding(top = 58.dp).fillMaxWidth(0.48f),
-                color = Color(0xF0111820), shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, CardBorder)
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 62.dp).fillMaxWidth(0.48f),
+                color = Color(0xF0111820),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, Color(0xFF3A4652)),
+                shadowElevation = 12.dp
             ) {
                 Column(Modifier.padding(12.dp)) {
                     OutlinedTextField(
-                        value = searchQuery, onValueChange = { searchQuery = it },
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
                         modifier = Modifier.fillMaxWidth().testTag("home_channel_search"),
-                        singleLine = true, placeholder = { Text("البحث في القنوات", color = TextMuted) },
+                        singleLine = true,
+                        placeholder = { Text("البحث في القنوات", color = TextMuted) },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = SnowWhite, unfocusedTextColor = SnowWhite,
-                            focusedBorderColor = Color(0xFFE0A526), unfocusedBorderColor = CardBorder,
-                            focusedContainerColor = CardBackground, unfocusedContainerColor = CardBackground
+                            focusedTextColor = SnowWhite,
+                            unfocusedTextColor = SnowWhite,
+                            focusedBorderColor = SonixGold,
+                            unfocusedBorderColor = Color(0xFF34404C),
+                            focusedContainerColor = HomePanel,
+                            unfocusedContainerColor = HomePanel
                         )
                     )
                     searchResults.forEach { channel ->
                         Text(
-                            channel.name, color = SnowWhite, modifier = Modifier.fillMaxWidth()
-                                .clickable { onSelectChannel(channel) }.padding(10.dp),
-                            maxLines = 1, overflow = TextOverflow.Ellipsis
+                            channel.name,
+                            color = SnowWhite,
+                            modifier = Modifier.fillMaxWidth().clickable { onSelectChannel(channel) }.padding(10.dp),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun HomeSubscriptionValue(label: String, value: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(label, color = TextMuted, fontSize = 10.sp)
+        Text(value, color = SnowWhite, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+@Composable
+private fun HomeInfoDivider() {
+    Box(Modifier.width(1.dp).height(28.dp).background(Color.White.copy(alpha = 0.14f)))
 }
 
 private fun String.mapDigitsToArabic(): String = map { c ->
@@ -179,12 +206,12 @@ private fun HomeToolButton(
 ) {
     var focused by remember { mutableStateOf(false) }
     Surface(
-        modifier = Modifier.size(46.dp).scale(if (focused) 1.04f else 1f)
+        modifier = Modifier.size(46.dp).scale(if (focused) 1.05f else 1f)
             .onFocusChanged { focused = it.isFocused }.focusable()
             .clickable(onClick = onClick).testTag("home_tool_$label"),
         shape = RoundedCornerShape(12.dp),
         color = Color(0xAA111820),
-        border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) Color(0xFF8FB8E8) else Color.White.copy(alpha = 0.14f))
+        border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) SonixGold else Color.White.copy(alpha = 0.12f))
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(22.dp))
@@ -202,26 +229,31 @@ private fun HomeSectionCard(
 ) {
     var focused by remember { mutableStateOf(false) }
     Surface(
-        modifier = modifier.fillMaxHeight().scale(if (focused) 1.04f else 1f)
+        modifier = modifier.fillMaxHeight().padding(horizontal = 7.dp)
+            .scale(if (focused) 1.035f else 1f)
             .onFocusChanged { focused = it.isFocused }.focusable().clickable(onClick = onClick)
             .testTag("home_section_$title"),
-        color = Color(0x66101820),
-        shape = RoundedCornerShape(22.dp),
-        border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) Color(0xFF8FB8E8) else Color.White.copy(alpha = 0.15f))
+        color = Color(0x99101820),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) SonixGold else Color.White.copy(alpha = 0.08f))
     ) {
-        Column(Modifier.fillMaxSize().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        Column(
+            Modifier.fillMaxSize().padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
             Surface(
-                modifier = Modifier.size(94.dp),
+                modifier = Modifier.size(92.dp),
                 color = accent.copy(alpha = 0.12f),
-                shape = RoundedCornerShape(24.dp),
-                border = BorderStroke(1.dp, accent.copy(alpha = 0.45f))
+                shape = RoundedCornerShape(22.dp),
+                border = BorderStroke(1.dp, accent.copy(alpha = 0.48f))
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(54.dp))
+                    Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(52.dp))
                 }
             }
-            Spacer(Modifier.height(16.dp))
-            Text(title, color = SnowWhite, fontSize = 20.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(15.dp))
+            Text(title, color = SnowWhite, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
         }
     }
 }
